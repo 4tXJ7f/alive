@@ -219,8 +219,8 @@ class CopyOperand(Instr):
 
 ################################
 class BinOp(Instr):
-  Add, Sub, Mul, UDiv, SDiv, URem, SRem, Shl, AShr, LShr, And, Or, Xor,\
-  Last = range(14)
+  Add, Sub, Mul, UDiv, SDiv, URem, SRem, Shl, AShr, LShr, And, Or, Xor, FAdd,\
+  FSub, FMul, FDiv, Last = range(18)
 
   opnames = {
     Add:  'add',
@@ -236,6 +236,10 @@ class BinOp(Instr):
     And:  'and',
     Or:   'or',
     Xor:  'xor',
+    FAdd: 'fadd',
+    FSub: 'fsub',
+    FMul: 'fmul',
+    FDiv: 'fdiv',
   }
   opids = {v:k for k, v in opnames.items()}
 
@@ -261,6 +265,10 @@ class BinOp(Instr):
       return BinOp.opids[name]
     except:
       raise ParseError('Unknown binary instruction')
+
+  @staticmethod
+  def isFloatOp(op):
+    return op in [BinOp.FAdd, BinOp.FSub, BinOp.FMul, BinOp.FDiv]
 
   def __repr__(self):
     t = str(self.type)
@@ -288,6 +296,11 @@ class BinOp(Instr):
       self.And:  [],
       self.Or:   [],
       self.Xor:  [],
+      # XXX: Check what is needed here
+      self.FAdd: [],
+      self.FSub: [],
+      self.FMul: [],
+      self.FDiv: [],
     }[self.op]
 
     for f in self.flags:
@@ -326,6 +339,11 @@ class BinOp(Instr):
       self.And: {},
       self.Or:  {},
       self.Xor: {},
+      # XXX: Check what is needed here
+      self.FAdd: {},
+      self.FSub: {},
+      self.FMul: {},
+      self.FDiv: {},
     }[self.op]
 
     if do_infer_flags():
@@ -351,6 +369,11 @@ class BinOp(Instr):
       self.And:  lambda a,b: [],
       self.Or:   lambda a,b: [],
       self.Xor:  lambda a,b: [],
+      # XXX: Check what is needed here
+      self.FAdd: lambda a,b: [],
+      self.FSub: lambda a,b: [],
+      self.FMul: lambda a,b: [],
+      self.FDiv: lambda a,b: [],
       }[self.op](v1,v2)
 
   def toSMT(self, defined, poison, state, qvars):
@@ -371,6 +394,11 @@ class BinOp(Instr):
       self.And:  lambda a,b: a & b,
       self.Or:   lambda a,b: a | b,
       self.Xor:  lambda a,b: a ^ b,
+      # XXX: Support for rounding modes
+      self.FAdd: lambda a,b: fpAdd(RNE(), a, b),
+      self.FSub: lambda a,b: fpNeg(b) if isinstance(a, FPNumRef) and a.isZero() else fpSub(RNE(), a, b),
+      self.FMul: lambda a,b: fpMul(RNE(), a, b),
+      self.FDiv: lambda a,b: fpDiv(RNE(), a, b),
     }[self.op](v1, v2)
 
   def getTypeConstraints(self):
@@ -392,10 +420,15 @@ class BinOp(Instr):
     And:  'And',
     Or:   'Or',
     Xor:  'Xor',
+    FAdd: 'FAdd',
+    FSub: 'FSub',
+    FMul: 'FMul',
+    FDiv: 'FDiv',
   }
 
   def register_types(self, manager):
-    manager.register_type(self, self.type, IntType())
+    t = FloatType() if BinOp.isFloatOp(self.op) else IntType()
+    manager.register_type(self, self.type, t)
     manager.unify(self, self.v1, self.v2)
 
   def visit_source(self, mb):

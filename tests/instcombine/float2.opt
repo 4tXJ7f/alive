@@ -1,0 +1,60 @@
+Name: mulConstConst
+Pre: IsNormal(C0 * C)
+%f = fmul %X, C0
+%r = fmul %f, C
+  =>
+%r = fmul %X, (C0 * C)
+
+Name: invConstMulConst
+Pre: hasOneUse(%f) && isNormal(C0 * C)
+%f = fdiv C0, %X
+%r = fmul %f, C
+  =>
+%r = fdiv (C0 * C), %X
+
+Name: divConstMulConst
+Pre: isNormal(C0 * C)
+%f = fdiv %X, C1
+%r = fmul %f, C
+  =>
+%r = fmul (C / C1), %X
+
+Name: divConstMulConst
+Pre: !isNormal(C0 * C)
+%f = fdiv %X, C1
+%r = fmul %f, C
+  =>
+%r = fdiv %X, (C1 / C)
+
+Name: sqrSqrt
+Pre: allowReassociate
+%s = fmul %X, %X
+%r = sqrt %s
+
+Name: mulLog2OfHalf
+Pre: allowReassociate
+%h = fmul 0.5, %Y
+%l = log2 %h
+%r = fmul %X, %l
+  =>
+%l = log2 %Y
+%m = fmul %X, %l
+%r = fsub %m, %X
+
+Name: PromConstCast
+Pre: hasOneUse(%X) && CI == int(C) && WillNotOverflowSignedAdd(%X, CI)
+%r = fadd (sitofp %X), C
+  =>
+%i = sitofp (add %X, CI)
+
+Name: PromAddCast
+Pre: hasOneUse(%X) && hasOneUse(%Y) && WillNotOverflowSignedAdd(%X, CI)
+%r = fadd (sitofp %X), (sitofp %Y)
+  =>
+%i = sitofp (add %X, %Y)
+
+Name: DivConstToReciprocal
+Pre: hasExactInverse(C)
+%r = fdiv %X, C
+  =>
+%r = fmul %X, 1.0 / C

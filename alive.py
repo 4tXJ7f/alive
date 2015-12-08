@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse, glob, re, sys
+import argparse, glob, re, sys, time
 from language import *
 from parser import parse_llvm, parse_opt_file
 from gen import generate_switched_suite
-
 
 def block_model(s, sneg, m):
   # First simplify the model.
@@ -163,6 +162,8 @@ def var_type(var, types):
   t = types[Int('t_' + var)].as_long()
   if t == Type.Int:
     return 'i%s' % types[Int('size_' + var)]
+  if t == Type.Float:
+    return 'f%s' % types[Int('size_' + var)]
   if t == Type.Ptr:
     return var_type('*' + var, types) + '*'
   if t == Type.Array:
@@ -182,6 +183,8 @@ def str_model(s, v):
   val = s.model().evaluate(v, True)
   if isinstance(val, BoolRef):
     return "true" if is_true(val) else "false"
+  elif isinstance(val, FPNumRef):
+    return "%s" % val
   valu = val.as_long()
   vals = val.as_signed_long()
   bin = val2binhex(valu, val.size())
@@ -250,7 +253,11 @@ def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
        str_model(s, a), 'poison', k, srcv, tgtv, types))
 
     # Check that final values of vars are equal.
-    check_expr(qvars, base_cnstr + [a != b], lambda s :
+    cond = [a != b]
+    if isinstance(a, FPRef):
+      cond = [Or(And(a != b, Not(fpIsNaN(a)), Not(fpIsNaN(b))), Xor(fpIsNaN(a), fpIsNaN(b)))]
+
+    check_expr(qvars, base_cnstr + cond, lambda s :
       ("Mismatch in values of %s %s\n" % (var_type(k, types), k),
        str_model(s, a), str_model(s, b), k, srcv, tgtv, types))
 
@@ -351,6 +358,7 @@ def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
     # complete (closed world)
     p1 = mk_and(v)
     p2 = mk_and(tgtbbs[k])
+
     check_expr([], [p1 != p2] + extra_cnstrs, lambda s :
       ("Mismatch in preconditions for BB '%s'\n" % k, str_model(s, p1),
        str_model(s, p2), None, srcv, tgtv, types))
@@ -457,7 +465,9 @@ def check_opt(opt):
     fixupTypes(ident_src, types)
     fixupTypes(ident_tgt, types)
     pre.fixupTypes(types)
+    start = time.clock()
     check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users)
+    print "Time:", time.clock() - start
     block_model(s, sneg, types)
     proofs += 1
     sys.stdout.write('\rDone: ' + str(proofs))
