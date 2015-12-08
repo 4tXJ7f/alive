@@ -1,0 +1,36 @@
+Name: mulNegOne
+%r = fmul %X, -1.0
+  =>
+%r = fsub 0.0, %X
+
+Name: mulPromNeg
+%nx = fsub 0.0, %X
+%r = fmul %nx, %Y
+  =>
+%n = fmul %X, %Y
+%r = fsub 0.0, %n
+
+Name: addToSub
+%a = fsub 0.0, %Y
+%r = fadd %X, %a
+  =>
+%r = fsub %X, %Y
+
+Name: addToSubRev
+%a = fsub 0.0, %X
+%r = fadd %a, %Y
+  =>
+%r = fsub %Y, %X
+
+Name: subNegToAdd
+%n = fsub 0.0, %Y
+%r = fsub %X, %n
+  =>
+%r = fadd %X, %Y
+
+Name: mulNegNeg
+%nx = fsub 0.0, %X
+%ny = fsub 0.0, %Y
+%r = fmul %nx, %ny
+  =>
+%r = fmul %X, %Y

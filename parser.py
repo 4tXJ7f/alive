@@ -90,7 +90,12 @@ def parseOperand(v, type):
   elif v == 'null':
     c = ConstantVal(0, type.ensurePtrType())
   else:
-    c = ConstantVal(int(v), type.ensureIntType())
+    try:
+      c = ConstantVal(int(v), type.ensureIntType())
+    except ValueError:
+      # XXX: converting to float here might be a problem because python float
+      # seem to be 53 bit only.
+      c = ConstantVal(float(v), type.ensureFloatType())
 
   identifiers[c.getUniqueName()] = c
   return c
@@ -115,8 +120,12 @@ def parseOptional(default):
                        toks if len(toks) > 0 else default
 
 def parseBinOp(toks):
-  type = toks[2].ensureIntType()
-  return BinOp(BinOp.getOpId(toks[0]), type, parseOperand(toks[3], type),
+  opId = BinOp.getOpId(toks[0])
+  if BinOp.isFloatOp(opId):
+    type = toks[2].ensureFloatType()
+  else:
+    type = toks[2].ensureIntType()
+  return BinOp(opId, type, parseOperand(toks[3], type),
                parseOperand(toks[4], type), toks[1])
 
 def parseConversionOp(toks):
@@ -287,7 +296,7 @@ pred_args = Forward()
 cnst_expr_atoms = (identifier + Suppress('(') + pred_args + Suppress(')') +\
                    ~oneOf('&& ||')).\
                     setParseAction(pa(parseCnstFunction)) |\
-                  Regex(r"C\d*|(?:-\s*)?\d+|%[a-zA-Z0-9_.]+") |\
+                  Regex(r"C\d*|(?:-\s*)?\d+(\.\d+)?|%[a-zA-Z0-9_.]+") |\
                   oneOf('false true null')
 cnst_expr_atoms = locatedExpr(cnst_expr_atoms)
 

@@ -42,7 +42,7 @@ def create_mem_if_needed(ptr, val, state, qvars):
 
 
 class Type:
-  Int, Ptr, Array, Unknown = range(4)
+  Int, Float, Ptr, Array, Unknown = range(5)
 
   def __repr__(self):
     return ''
@@ -52,6 +52,9 @@ class Type:
 
   def ensureIntType(self, size = None):
     self.typeMismatch('int')
+
+  def ensureFloatType(self, size = None):
+    self.typeMismatch('float')
 
   def ensurePtrType(self):
     self.typeMismatch('pointer')
@@ -79,6 +82,11 @@ def getMostSpecificType(t1, t2):
     _ErrorOnTypeMismatch(t1.defined and t2.defined and
                          t1.getSize() != t2.getSize())
     return t1 if t1.defined else t2
+
+  if isinstance(t1, FloatType):
+    _ErrorOnTypeMismatch(t1.getSize() != t2.getSize())
+    return t1
+
   if isinstance(t1, PtrType):
     t1id = id(t1.type)
     return t1 if id(getMostSpecificType(t1.type, t2.type)) == t1id else t2
@@ -96,6 +104,9 @@ class UnknownType(Type):
 
   def ensureIntType(self, size = None):
     return IntType(size)
+
+  def ensureFloatType(self, size = None):
+    return FloatType(size)
 
   def ensurePtrType(self):
     return PtrType()
@@ -313,6 +324,102 @@ class IntType(Type):
                And(self.bitsvar > 0, self.bitsvar <= 64))]
     return And(c)
 
+
+################################
+class FloatType(Type):
+  def __init__(self, size = None):
+    if size == None:
+      self.defined = False
+      return
+    self.size = size
+    self.defined = True
+    assert isinstance(self.size, int)
+
+  def ensureFloatType(self, size = None):
+    assert self.defined == False or size == None or size == self.size
+    if size != None:
+      self.size = size
+      self.defined = True
+    return self
+
+  def ensureFirstClass(self):
+    # XXX: What should be here?
+    return self
+
+  def ensureIntPtrOrVector(self):
+    # XXX: What should be here?
+    return self
+
+  def setName(self, name):
+    # XXX: What should be here?
+    self.typevar = Int('t_' + name)
+    self.bitsvar = Int('size_' + name)
+
+  def __repr__(self):
+    if self.defined:
+      return 'f' + str(self.size)
+    return ''
+
+  def getSize(self):
+    if hasattr(self, 'size'):
+      return self.size
+    return self.bitsvar
+
+  def fixupTypes(self, types):
+    size = types.get_interp(self.bitsvar).as_long()
+    assert self.defined == False or self.size == size
+    self.size = size
+
+  def __eq__(self, other):
+    if isinstance(other, FloatType):
+      return self.bitsvar == other.bitsvar
+    if isinstance(other, float):
+      return self.bitsvar == other
+    if isinstance(other, UnknownType):
+      return other == self
+    return BoolVal(False)
+
+  def _cmp(self, op, other):
+    if isinstance(other, IntType):
+      return op(self.bitsvar, other.bitsvar)
+    if isinstance(other, int):
+      return op(self.bitsvar, other)
+    if isinstance(other, UnknownType):
+      c = []
+      op2 = other.getIntType(c)
+      return mk_and(c + [op(self.bitsvar, op2.bitsvar)])
+    assert False
+
+  def __lt__(self, other):
+    return self._cmp(operator.lt, other)
+
+  def __gt__(self, other):
+    return self._cmp(operator.gt, other)
+
+  def __ge__(self, other):
+    return self._cmp(operator.ge, other)
+
+  def ensureTypeDepth(self, depth):
+    return BoolVal(depth == 0)
+
+  def getTypeConstraints(self):
+    c = [self.typevar == Type.Float]
+    if self.defined:
+      c += [self.bitsvar == self.getSize()]
+    else:
+      # Floats are assumed to be 16, 32 or 64 bit.
+      c += [self.bitsvar == 16] # Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
+    return And(c)
+
+  def sortOfFloat(self):
+    if self.size == 16:
+      return Float16()
+    elif self.size == 32:
+      return Float32()
+    elif self.size == 64:
+      return Float64()
+    else:
+      raise AliveError('floating-point type not supported')
 
 ################################
 class PtrType(Type):
@@ -553,9 +660,13 @@ class Input(Value):
     return self.getName()
 
   def toSMT(self, defined, poison, state, qvars):
-    v = BitVec(self.name, self.type.getSize())
-    create_mem_if_needed(v, self, state, [])
-    return v
+    if isinstance(self.type, FloatType):
+      # TODO: create_mem_if_needed
+      return FP(self.name, self.type.sortOfFloat())
+    else:
+      v = BitVec(self.name, self.type.getSize())
+      create_mem_if_needed(v, self, state, [])
+      return v
 
   def register_types(self, manager):
     if self.name[0] == 'C':

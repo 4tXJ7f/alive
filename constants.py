@@ -58,13 +58,20 @@ class ConstantVal(Constant):
   def getTypeConstraints(self):
     c = self.type.getTypeConstraints()
     if self.val != 0 and not self.type.defined:
-      # One more bit for positive integers to allow for sign bit.
-      bits = self.val.bit_length() + int(self.val >= 0)
-      return And(c, self.type >= bits)
+      if isinstance(self.type, FloatType):
+        # XXX: Can we get a better estimate here?
+        return And(c, self.type >= 16)
+      else:
+        # One more bit for positive integers to allow for sign bit.
+        bits = self.val.bit_length() + int(self.val >= 0)
+        return And(c, self.type >= bits)
     return c
 
   def toSMT(self, defined, poison, state, qvars):
-    return BitVecVal(self.val, self.type.getSize())
+    if isinstance(self.type, FloatType):
+      return FPVal(self.val, self.type.sortOfFloat())
+    else:
+      return BitVecVal(self.val, self.type.getSize())
 
   def register_types(self, manager):
     if isinstance(self.type, PtrType):
@@ -425,7 +432,7 @@ class CnstFunction(Constant):
       return True, manager.get_llvm_type(self.args[0]).arr('getScalarSizeInBits', [])
 
     if self.op == CnstFunction.zext:
-      return False, self.args[0].get_APInt(manager).dot('zext', 
+      return False, self.args[0].get_APInt(manager).dot('zext',
         [manager.get_llvm_type(self).arr('getScalarSizeInBits',[])])
 
     raise AliveError(self.opnames[self.op] + ' not implemented')
