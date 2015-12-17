@@ -205,8 +205,8 @@ class BinaryBoolPred(BoolPred):
 ################################
 class LLVMBoolPred(BoolPred):
   eqptrs, isPower2, isPower2OrZ, isShiftedMask, isSignBit, maskZero,\
-  NSWAdd, NUWAdd, NSWSub, NUWSub, NSWMul, NUWMul, NUWShl, OneUse,\
-  Last = range(15)
+  NSWAdd, NUWAdd, NSWSub, NUWSub, NSWMul, NUWMul, NUWShl, OneUse, isNormal,\
+  Last = range(16)
 
   opnames = {
     eqptrs:      'equivalentAddressValues',
@@ -223,9 +223,12 @@ class LLVMBoolPred(BoolPred):
     NUWMul:      'WillNotOverflowUnsignedMul',
     NUWShl:      'WillNotOverflowUnsignedShl',
     OneUse:      'hasOneUse',
+    # floating-point preconditions
+    isNormal:    'isNormal',
   }
   opids = {v:k for k, v in opnames.items()}
 
+  # XXX: Just get these numbers from the argument types
   num_args = {
     eqptrs:      2,
     isPower2:    1,
@@ -241,6 +244,7 @@ class LLVMBoolPred(BoolPred):
     NUWMul:      2,
     NUWShl:      2,
     OneUse:      1,
+    isNormal:    1,
   }
 
   def __init__(self, op, args):
@@ -282,6 +286,7 @@ class LLVMBoolPred(BoolPred):
     NUWMul:      ['input', 'input'],
     NUWShl:      ['const', 'const'],
     OneUse:      ['var'],
+    isNormal:    ['input'],
   }
 
   @staticmethod
@@ -315,11 +320,13 @@ class LLVMBoolPred(BoolPred):
     NSWMul:      lambda a,b: allTyEqual([a,b], Type.Int),
     NUWMul:      lambda a,b: allTyEqual([a,b], Type.Int),
     NUWShl:      lambda a,b: allTyEqual([a,b], Type.Int),
-    OneUse:      lambda a: []
+    OneUse:      lambda a: [],
+    isNormal:    lambda a: allTyEqual([a], Type.Float),
   }
 
   def getTypeConstraints(self):
     c = self.argConstraints[self.op](*self.args)
+    print self.args[0].__class__.__name__
     c += [v.getTypeConstraints() for v in self.args]
     return mk_and(c)
 
@@ -360,6 +367,8 @@ class LLVMBoolPred(BoolPred):
       self.NUWShl:      lambda a,b: (d, [LShR(a << b, b) == a]),
       self.OneUse:      lambda a: (d,
                           [get_users_var(self.args[0].getUniqueName()) == 1]),
+      self.isNormal:    lambda a: (d,
+                          [fpIsNormal(a)]),
     }[self.op](*args)
 
   def register_types(self, manager):

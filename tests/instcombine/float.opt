@@ -1,3 +1,10 @@
+Name: mulConstConst
+Pre: isNormal(C0 * C)
+%f = fmul %X, C0
+%r = fmul %f, C
+  =>
+%r = fmul %X, (C0 * C)
+
 Name: mulNegOne
 %r = fmul %X, -1.0
   =>
