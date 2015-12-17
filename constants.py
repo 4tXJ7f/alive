@@ -176,7 +176,9 @@ class CnstBinaryOp(Constant):
     self.op = op
     self.v1 = v1
     self.v2 = v2
-    self.type = IntType()
+    # Note: v1 and v2 are expected to have the same type. The type constraints
+    # enforce this property.
+    self.type = FloatType() if isinstance(self.v1.type, FloatType) else IntType()
     self.mk_name()
 
   def __repr__(self):
@@ -190,8 +192,7 @@ class CnstBinaryOp(Constant):
     assert False
 
   def getTypeConstraints(self):
-    return mk_and([self.type == self.v1.type,
-                   self.type == self.v2.type,
+    return mk_and([self.v1.type == self.v2.type,
                    self.v1.getTypeConstraints(),
                    self.v2.getTypeConstraints(),
                    self.type.getTypeConstraints()])

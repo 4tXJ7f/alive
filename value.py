@@ -97,6 +97,7 @@ def getMostSpecificType(t1, t2):
 class UnknownType(Type):
   def __init__(self, d = 0):
     self.types = {self.Int: IntType(),
+                  self.Float: FloatType(),
                   self.Ptr: PtrType(depth = d),
                   self.Array: ArrayType(depth = d),
                  }
