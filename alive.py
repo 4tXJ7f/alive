@@ -254,8 +254,6 @@ def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
 
     # Check that final values of vars are equal.
     cond = [a != b]
-    if isinstance(a, FPRef):
-      cond = [Or(And(a != b, Not(fpIsNaN(a)), Not(fpIsNaN(b))), Xor(fpIsNaN(a), fpIsNaN(b)))]
 
     check_expr(qvars, base_cnstr + cond, lambda s :
       ("Mismatch in values of %s %s\n" % (var_type(k, types), k),
