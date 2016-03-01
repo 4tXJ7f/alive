@@ -396,7 +396,7 @@ class BinOp(Instr):
       self.Xor:  lambda a,b: a ^ b,
       # XXX: Support for rounding modes
       self.FAdd: lambda a,b: fpAdd(RNE(), a, b),
-      self.FSub: lambda a,b: fpNeg(b) if isinstance(a, FPNumRef) and a.isZero() else fpSub(RNE(), a, b),
+      self.FSub: lambda a,b: fpNeg(b) if isinstance(a, FPNumRef) and a.isZero() and a.isNegative() else fpSub(RNE(), a, b),
       self.FMul: lambda a,b: fpMul(RNE(), a, b),
       self.FDiv: lambda a,b: fpDiv(RNE(), a, b),
     }[self.op](v1, v2)
