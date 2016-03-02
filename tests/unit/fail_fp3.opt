@@ -1,0 +1,5 @@
+Name: addToSubRev
+%a = fsub 0.0, %X
+%r = fadd %a, %Y
+  =>
+%r = fsub %Y, %X

@@ -1,0 +1,7 @@
+Name: SubNegToPlus:AddSub:1749
+%a = fsub 0.0, %y
+%b = fptrunc %a
+%r = fsub %x, %b
+  =>
+%c = fptrunc %y
+%r = fadd %x, %c

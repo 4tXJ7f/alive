@@ -134,6 +134,8 @@ def parseConversionOp(toks):
     stype = toks[1].ensureIntType()
   elif ConversionOp.enforcePtrSrc(op):
     stype = toks[1].ensurePtrType()
+  elif ConversionOp.enforceFloatSrc(op):
+    stype = toks[1].ensureFloatType()
   else:
     stype = toks[1]
 
@@ -141,6 +143,8 @@ def parseConversionOp(toks):
     type = toks[3].ensureIntType()
   elif ConversionOp.enforcePtrTgt(op):
     type = toks[3].ensurePtrType()
+  elif ConversionOp.enforceFloatTgt(op):
+    type = toks[3].ensureFloatType()
   else:
     type = toks[3]
 

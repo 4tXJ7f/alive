@@ -1,0 +1,4 @@
+Name: ZeroToNegZero:AddSub:1730
+%r = fsub 0.0, %x
+  =>
+%r = fsub -0.0, %x

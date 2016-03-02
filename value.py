@@ -381,7 +381,7 @@ class FloatType(Type):
     return BoolVal(False)
 
   def _cmp(self, op, other):
-    if isinstance(other, IntType):
+    if isinstance(other, FloatType):
       return op(self.bitsvar, other.bitsvar)
     if isinstance(other, int):
       return op(self.bitsvar, other)
@@ -409,7 +409,7 @@ class FloatType(Type):
       c += [self.bitsvar == self.getSize()]
     else:
       # Floats are assumed to be 16, 32 or 64 bit.
-      c += [self.bitsvar == 16] # Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
+      c += [Or(self.bitsvar == 16, self.bitsvar == 32)] # Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
     return And(c)
 
   def sortOfFloat(self):

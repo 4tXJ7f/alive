@@ -477,7 +477,7 @@ class BinOp(Instr):
 
 ################################
 class ConversionOp(Instr):
-  Trunc, ZExt, SExt, ZExtOrTrunc, Ptr2Int, Int2Ptr, Bitcast, Last = range(8)
+  Trunc, ZExt, SExt, ZExtOrTrunc, Ptr2Int, Int2Ptr, Bitcast, FPTrunc, FPExt, FPToUI, FPToSI, UIToFP, SIToFP, Last = range(14)
 
   opnames = {
     Trunc:       'trunc',
@@ -487,6 +487,12 @@ class ConversionOp(Instr):
     Ptr2Int:     'ptrtoint',
     Int2Ptr:     'inttoptr',
     Bitcast:     'bitcast',
+    FPTrunc:     'fptrunc',
+    FPExt:       'fpext',
+    FPToUI:      'fptoui',
+    FPToSI:      'fptosi',
+    UIToFP:      'uitofp',
+    SIToFP:      'sitofp',
   }
   opids = {v:k for k, v in opnames.items()}
 
@@ -512,27 +518,49 @@ class ConversionOp(Instr):
 
   @staticmethod
   def enforceIntSrc(op):
-    return op == ConversionOp.Trunc or\
-           op == ConversionOp.ZExt or\
-           op == ConversionOp.SExt or\
-           op == ConversionOp.ZExtOrTrunc or\
-           op == ConversionOp.Int2Ptr
+    return op in [
+        ConversionOp.Trunc,
+        ConversionOp.ZExt,
+        ConversionOp.SExt,
+        ConversionOp.ZExtOrTrunc,
+        ConversionOp.Int2Ptr,
+        ConversionOp.SIToFP,
+        ConversionOp.UIToFP ]
 
   @staticmethod
   def enforcePtrSrc(op):
     return op == ConversionOp.Ptr2Int
 
   @staticmethod
+  def enforceFloatSrc(op):
+    return op in [
+        ConversionOp.FPTrunc,
+        ConversionOp.FPExt,
+        ConversionOp.FPToSI,
+        ConversionOp.FPToUI ]
+
+  @staticmethod
   def enforceIntTgt(op):
-    return op == ConversionOp.Trunc or\
-           op == ConversionOp.ZExt or\
-           op == ConversionOp.SExt or\
-           op == ConversionOp.ZExtOrTrunc or\
-           op == ConversionOp.Ptr2Int
+    return op in [
+        ConversionOp.Trunc,
+        ConversionOp.ZExt,
+        ConversionOp.SExt,
+        ConversionOp.ZExtOrTrunc,
+        ConversionOp.Ptr2Int,
+        ConversionOp.FPToSI,
+        ConversionOp.FPToUI ]
 
   @staticmethod
   def enforcePtrTgt(op):
     return op == ConversionOp.Int2Ptr
+
+  @staticmethod
+  def enforceFloatTgt(op):
+    return op in [
+        ConversionOp.FPTrunc,
+        ConversionOp.FPExt,
+        ConversionOp.SIToFP,
+        ConversionOp.UIToFP ]
 
   def __repr__(self):
     st = str(self.stype)
@@ -554,6 +582,12 @@ class ConversionOp(Instr):
       self.Ptr2Int:     lambda v: truncateOrZExt(v, self.type.getSize()),
       self.Int2Ptr:     lambda v: truncateOrZExt(v, self.type.getSize()),
       self.Bitcast:     lambda v: v,
+      self.FPTrunc:     lambda v: fpToFP(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
+      self.FPExt:       lambda v: fpToFP(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
+      self.FPToUI:      lambda v: fpToUBV(RNE(), v, BitVecSort(self.type.getSize())),
+      self.FPToSI:      lambda v: fpToSBV(RNE(), v, BitVecSort(self.type.getSize())),
+      self.UIToFP:      lambda v: fpToFPUnsigned(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
+      self.SIToFP:      lambda v: fpToFP(v, FloatType(self.type.getSize()).sortOfFloat()),
     }[self.op](state.eval(self.v, defined, poison, qvars))
 
   def getTypeConstraints(self):
@@ -565,6 +599,12 @@ class ConversionOp(Instr):
       self.Ptr2Int:     lambda src,tgt: BoolVal(True),
       self.Int2Ptr:     lambda src,tgt: BoolVal(True),
       self.Bitcast:     lambda src,tgt: src.getSize() == tgt.getSize(),
+      self.FPTrunc:     lambda src,tgt: src > tgt,
+      self.FPExt:       lambda src,tgt: src < tgt,
+      self.FPToUI:      lambda src,tgt: BoolVal(True),
+      self.FPToSI:      lambda src,tgt: BoolVal(True),
+      self.UIToFP:      lambda src,tgt: BoolVal(True),
+      self.SIToFP:      lambda src,tgt: BoolVal(True),
     } [self.op](self.stype, self.type)
 
     return And(self.stype == self.v.type,
@@ -595,6 +635,8 @@ class ConversionOp(Instr):
       manager.register_type(self.v, self.stype, IntType())
     elif self.enforcePtrSrc(self.op):
       manager.register_type(self.v, self.stype, PtrType())
+    elif self.enforceFloatSrc(self.op):
+      manager.register_type(self.v, self.stype, FloatType())
     else:
       manager.register_type(self.v, self.stype, UnknownType())
 
@@ -602,6 +644,8 @@ class ConversionOp(Instr):
       manager.register_type(self, self.type, IntType())
     elif self.enforcePtrTgt(self.op):
       manager.register_type(self, self.type, PtrType())
+    elif self.enforceFloatTgt(self.op):
+      manager.register_type(self, self.type, FloatType())
     else:
       manager.register_type(self, self.type, UnknownType())
     # TODO: inequalities for trunc/sext/zext
