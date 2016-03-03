@@ -1,0 +1,80 @@
+Name: FAddToAdd:AddSub:1354
+Pre: WillNotOverflowSignedAdd(%x, fptosi(C)) && (sitofp(fptosi(C)) == C)
+%a = sitofp %x
+%r = fadd %a, C
+  =>
+%b = add nsw %x, (fptosi C)
+%r = sitofp %b
+
+Name: AddZero:InstructionSimplify:806-1
+Pre: CannotBeNegativeZero(%x)
+%r = fadd %x, 0.0
+  =>
+%r = %x
+
+
+Name: SubZero:InstructionSimplify:845-1
+Pre: CannotBeNegativeZero(%x)
+%r = fsub %x, -0.0
+  =>
+%r = %x
+
+
+Name: MulOne:InstructionSimplify:882
+%r = fmul %x, 1.0
+  =>
+%r = %x
+
+
+Name: AddZero:InstructionSimplify:802
+%r = fadd %x, -0.0
+  =>
+%r = %x
+
+
+Name: SubZero:InstructionSimplify:841
+%r = fsub %x, 0.0
+  =>
+%r = %x
+
+
+Name: ZeroSubZeroSub:InstructionSimplify:852-1
+%a = fsub -0.0, %x
+%r = fsub -0.0, %a
+  =>
+%r = %x
+
+
+Name: SubNegToPlus:AddSub:1756
+%a = fsub -0.0, %y
+%b = fpext %a
+%r = fsub %x, %b
+  =>
+%c = fpext %y
+%r = fadd %x, %c
+
+
+Name: MulNegOne:MulDivRem:555
+%r = fmul %X, -1.0
+  =>
+%r = fsub -0.0, %X
+
+
+Name: SubNegToPlus:AddSub:1744
+%a = fsub -0.0, %y
+%r = fsub %x, %a
+  =>
+%r = fadd %x, %y
+
+
+Name: ZeroToNegZero:AddSub:1730
+%r = fsub 0.0, %x
+  =>
+%r = fsub -0.0, %x
+
+
+Name: addToSubRev
+%a = fsub 0.0, %X
+%r = fadd %a, %Y
+  =>
+%r = fsub %Y, %X

@@ -1,0 +1,71 @@
+Name: AddZero:InstructionSimplify:806-2
+%r = fadd nsz %x, 0.0
+  =>
+%r = %x
+
+
+Name: SubZero:InstructionSimplify:845-2
+%r = fsub nsz %x, -0.0
+  =>
+%r = %x
+
+
+Name: XSubX:InstructionSimplify:859
+%r = fsub nnan %x, %x
+  =>
+%r = 0.0
+
+
+Name: ZeroSubZeroSub:InstructionSimplify:854-1
+%a = fsub 0.0, %x
+%r = fsub nsz 0.0, %a
+  =>
+%r = %x
+
+
+Name: ZeroSubZeroSub:InstructionSimplify:854-2
+%a = fsub 0.0, %x
+%r = fsub nsz -0.0, %a
+  =>
+%r = %x
+
+
+Name: MulZero:InstructionSimplify:886-1
+%r = fmul nnan nsz %x, 0.0
+  =>
+%r = 0.0
+
+
+Name: MulZero:InstructionSimplify:886-2
+%r = fmul nnan nsz %x, -0.0
+  =>
+%r = -0.0
+
+
+Name: ZeroDiv:InstructionSimplify:1127
+Pre: AnyZero(C)
+%r = fdiv nnan nsz %x, C
+  =>
+%r = 0.0
+
+
+Name: XDivX:InstructionSimplify:1132
+%r = fdiv nnan %x, %x
+  =>
+%r = 1.0
+
+
+Name: NegXDivX:InstructionSimplify:1138
+Pre: AnyZero(C)
+%a = fsub C, %x
+%r = fdiv nnan %a, %x
+  =>
+%r = -1.0
+
+
+Name: NegXDivX:InstructionSimplify:1140
+Pre: AnyZero(C)
+%a = fsub C, %x
+%r = fdiv nnan %x, %a
+  =>
+%r = -1.0

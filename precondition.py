@@ -205,8 +205,8 @@ class BinaryBoolPred(BoolPred):
 ################################
 class LLVMBoolPred(BoolPred):
   eqptrs, isPower2, isPower2OrZ, isShiftedMask, isSignBit, maskZero,\
-  NSWAdd, NUWAdd, NSWSub, NUWSub, NSWMul, NUWMul, NUWShl, OneUse, isNormal,\
-  Last = range(16)
+  NSWAdd, NUWAdd, NSWSub, NUWSub, NSWMul, NUWMul, NUWShl, OneUse, isNormal, notNegZero,\
+  Last = range(17)
 
   opnames = {
     eqptrs:      'equivalentAddressValues',
@@ -225,6 +225,7 @@ class LLVMBoolPred(BoolPred):
     OneUse:      'hasOneUse',
     # floating-point preconditions
     isNormal:    'isNormal',
+    notNegZero:  'CannotBeNegativeZero',
   }
   opids = {v:k for k, v in opnames.items()}
 
@@ -245,6 +246,7 @@ class LLVMBoolPred(BoolPred):
     NUWShl:      2,
     OneUse:      1,
     isNormal:    1,
+    notNegZero:  1,
   }
 
   def __init__(self, op, args):
@@ -287,6 +289,7 @@ class LLVMBoolPred(BoolPred):
     NUWShl:      ['const', 'const'],
     OneUse:      ['var'],
     isNormal:    ['input'],
+    notNegZero:  ['input'],
   }
 
   @staticmethod
@@ -322,6 +325,7 @@ class LLVMBoolPred(BoolPred):
     NUWShl:      lambda a,b: allTyEqual([a,b], Type.Int),
     OneUse:      lambda a: [],
     isNormal:    lambda a: allTyEqual([a], Type.Float),
+    notNegZero:  lambda a: allTyEqual([a], Type.Float),
   }
 
   def getTypeConstraints(self):
@@ -367,8 +371,8 @@ class LLVMBoolPred(BoolPred):
       self.NUWShl:      lambda a,b: (d, [LShR(a << b, b) == a]),
       self.OneUse:      lambda a: (d,
                           [get_users_var(self.args[0].getUniqueName()) == 1]),
-      self.isNormal:    lambda a: (d,
-                          [fpIsNormal(a)]),
+      self.isNormal:    lambda a: (d, [fpIsNormal(a)]),
+      self.notNegZero:  lambda a: (d, [a != -0.0]),
     }[self.op](*args)
 
   def register_types(self, manager):
