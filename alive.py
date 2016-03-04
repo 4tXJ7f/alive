@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import signal
 import argparse, glob, re, sys, time
 from language import *
 from parser import parse_llvm, parse_opt_file
 from gen import generate_switched_suite
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 def block_model(s, sneg, m):
   # First simplify the model.
@@ -403,6 +406,7 @@ def check_opt(opt):
   if s.check() != sat:
     print 'Precondition does not type check'
     exit(-1)
+  print s.model()
 
   # Only one type per variable/expression in the precondition is required.
   for v in s.model().decls():

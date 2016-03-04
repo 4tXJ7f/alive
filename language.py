@@ -572,22 +572,23 @@ class ConversionOp(Instr):
     return '%s%s %s%s' % (self.getOpName(), st, self.v.getName(), tt)
 
   def toSMT(self, defined, poison, state, qvars):
+    size = self.type.getSize()
     return {
-      self.Trunc:       lambda v: Extract(self.type.getSize()-1, 0, v),
-      self.ZExt:        lambda v: ZeroExt(self.type.getSize() -
+      self.Trunc:       lambda v: Extract(size-1, 0, v),
+      self.ZExt:        lambda v: ZeroExt(size -
                                          self.stype.getSize(), v),
-      self.SExt:        lambda v: SignExt(self.type.getSize() -
+      self.SExt:        lambda v: SignExt(size -
                                           self.stype.getSize(), v),
-      self.ZExtOrTrunc: lambda v: truncateOrZExt(v, self.type.getSize()),
-      self.Ptr2Int:     lambda v: truncateOrZExt(v, self.type.getSize()),
-      self.Int2Ptr:     lambda v: truncateOrZExt(v, self.type.getSize()),
+      self.ZExtOrTrunc: lambda v: truncateOrZExt(v, size),
+      self.Ptr2Int:     lambda v: truncateOrZExt(v, size),
+      self.Int2Ptr:     lambda v: truncateOrZExt(v, size),
       self.Bitcast:     lambda v: v,
-      self.FPTrunc:     lambda v: fpToFP(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
-      self.FPExt:       lambda v: fpToFP(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
-      self.FPToUI:      lambda v: fpToUBV(RNE(), v, BitVecSort(self.type.getSize())),
-      self.FPToSI:      lambda v: fpToSBV(RNE(), v, BitVecSort(self.type.getSize())),
-      self.UIToFP:      lambda v: fpToFPUnsigned(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
-      self.SIToFP:      lambda v: fpToFP(v, FloatType(self.type.getSize()).sortOfFloat()),
+      self.FPTrunc:     lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
+      self.FPExt:       lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
+      self.FPToUI:      lambda v: fpToUBV(RNE(), v, BitVecSort(size)),
+      self.FPToSI:      lambda v: fpToSBV(RNE(), v, BitVecSort(size)),
+      self.UIToFP:      lambda v: fpToFPUnsigned(RNE(), v, FloatType(size).sortOfFloat()),
+      self.SIToFP:      lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
     }[self.op](state.eval(self.v, defined, poison, qvars))
 
   def getTypeConstraints(self):
