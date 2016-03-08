@@ -330,7 +330,6 @@ class LLVMBoolPred(BoolPred):
 
   def getTypeConstraints(self):
     c = self.argConstraints[self.op](*self.args)
-    print self.args[0].__class__.__name__
     c += [v.getTypeConstraints() for v in self.args]
     return mk_and(c)
 

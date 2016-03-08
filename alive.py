@@ -346,7 +346,10 @@ gbl_prev_flags = []
 def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
   srcv = toSMT(src, ident_src, True)
   tgtv = toSMT(tgt, ident_tgt, False)
+  # XXX: this is rather hack-y
+  srcv.add_other_vars(tgtv)
   pre_d, pre = pre.toSMT(srcv)
+
   extra_cnstrs = pre_d + pre +\
                  srcv.getAllocaConstraints() + tgtv.getAllocaConstraints()
 
@@ -406,7 +409,6 @@ def check_opt(opt):
   if s.check() != sat:
     print 'Precondition does not type check'
     exit(-1)
-  print s.model()
 
   # Only one type per variable/expression in the precondition is required.
   for v in s.model().decls():

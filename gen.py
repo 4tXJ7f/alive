@@ -33,6 +33,8 @@ def get_most_specific_type(t1, t2):
     try:
       if isinstance(t2, IntType):
         return get_most_specific_type(t1.types[Type.Int], t2)
+      if isinstance(t2, FloatType):
+        return get_most_specific_type(t1.types[Type.Float], t2)
       if isinstance(t2, PtrType):
         return get_most_specific_type(t1.types[Type.Ptr], t2)
       if isinstance(t2, ArrayType):
@@ -61,6 +63,9 @@ def get_most_specific_type(t1, t2):
     _mismatch(t1.defined and t2.defined and
                          t1.getSize() != t2.getSize())
     return t1 if t1.defined else t2
+
+  if isinstance(t1, FloatType):
+    return t1 # XXX: OK?
 
   if isinstance(t1, PtrType):
     # TODO: return t1 or t2 when possible?
