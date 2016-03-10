@@ -84,6 +84,7 @@ class State:
   def add(self, v, smt, defined, poison, qvars):
     if v.getUniqueName() == '':
       return
+    # Now this adds a function to the vars 
     self.vars[v.getUniqueName()] = (smt, self.defined + defined, poison, qvars, \
                                     lambda a,b: getRelaxationCond(v,a,b))
     if isinstance(v, TerminatorInst):

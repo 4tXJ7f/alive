@@ -260,7 +260,7 @@ def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
 
     # Check that final values of vars are equal.
     cond = [And(a != b, Not(mk_or(relax)))]
-#    print cond
+    print relax
     check_expr(qvars, base_cnstr + cond, lambda s :
       ("Mismatch in values of %s %s\n" % (var_type(k, types), k),
        str_model(s, a), str_model(s, b), k, srcv, tgtv, types))
