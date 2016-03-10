@@ -543,6 +543,8 @@ class Value:
   def isConst(self):
     return False
 
+  def getRelaxationCond(self, tgt, src): return mk_or([])
+  
   def setName(self, name):
     self.name = name
     if hasattr(self, 'type'):

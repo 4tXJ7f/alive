@@ -229,21 +229,21 @@ def get_smt_vars(f):
   return ret
 
 
-def check_refinement(srcprog, srcv, tgtv, types, extra_cnstrs, users):
+def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
   for k,v in srcv.iteritems():
     # skip instructions only on one side; assumes they remain unchanged
     if k[0] == 'C' or not tgtv.has_key(k):
       continue
 
-    (a, defa, poisona, qvars) = v
-    (b, defb, poisonb, qvarsb) = tgtv[k]
+    (a, defa, poisona, qvars, op) = v
+    (b, defb, poisonb, qvarsb, _) = tgtv[k]
     defb = mk_and(defb)
     poisonb = mk_and(poisonb)
         
     n_users = users[k]
     base_cnstr = defa + poisona + extra_cnstrs + n_users
 
-    relax = getRelaxationCond(srcprog, a, b)
+    relax = op(a,b)
 
     # Already adds in preconditions before the three checks 
     # Check if domain of defined values of Src implies that of Tgt.
@@ -260,8 +260,7 @@ def check_refinement(srcprog, srcv, tgtv, types, extra_cnstrs, users):
 
     # Check that final values of vars are equal.
     cond = [And(a != b, Not(mk_or(relax)))]
-    print "COND"
-    print cond
+#    print cond
     check_expr(qvars, base_cnstr + cond, lambda s :
       ("Mismatch in values of %s %s\n" % (var_type(k, types), k),
        str_model(s, a), str_model(s, b), k, srcv, tgtv, types))
@@ -378,7 +377,7 @@ def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
     flgs = infer_flags(srcv, tgtv, types, extra_cnstrs, gbl_prev_flags, users)
     gbl_prev_flags = [simplify_pre(mk_and(gbl_prev_flags + [flgs]))]
   else:
-    check_refinement(src, srcv, tgtv, types, extra_cnstrs, users)
+    check_refinement(srcv, tgtv, types, extra_cnstrs, users)
 
   # 3) check that the final memory state is similar in both programs
   idx = BitVec('idx', get_ptr_size())
@@ -467,6 +466,7 @@ def check_opt(opt):
 
   # now check for correctness
   proofs = 0
+
   while res == sat:
     types = s.model()
     set_ptr_size(types)

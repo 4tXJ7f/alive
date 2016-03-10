@@ -84,7 +84,8 @@ class State:
   def add(self, v, smt, defined, poison, qvars):
     if v.getUniqueName() == '':
       return
-    self.vars[v.getUniqueName()] = (smt, self.defined + defined, poison, qvars)
+    self.vars[v.getUniqueName()] = (smt, self.defined + defined, poison, qvars, \
+                                    lambda a,b: getRelaxationCond(v,a,b))
     if isinstance(v, TerminatorInst):
       for (bb,cond) in v.getSuccessors(self):
         bb = bb[1:]
@@ -148,7 +149,7 @@ class State:
     return cnstr
 
   def eval(self, v, defined, poison, qvars):
-    (smt, d, p, q) = self.vars[v.getUniqueName()]
+    (smt, d, p, q, _) = self.vars[v.getUniqueName()]
     defined += d
     poison += p
     qvars += q
@@ -167,13 +168,14 @@ class State:
     return self.vars[k]
 
   def add_other_vars(self, other_state):
-    for v, (smt, defined, poison, qvars) in other_state.vars.iteritems():
+    for v, (smt, defined, poison, qvars, _) in other_state.vars.iteritems():
       if v[0] != '%' and v[0] != 'C' and not v.startswith('ret_'):
         self.vars[v] = (smt, defined, poison, qvars)
 
 
 ################################
 class Instr(Value):
+  def getRelaxationCond(self, tgt, src): return mk_or([])
   pass
 
 ################################
@@ -419,11 +421,8 @@ class BinOp(Instr):
   def getRelaxationCond(self, tgt, src):
     cond = []
     if 'nsz' in self.flags:
-      print tgt
-      print src
       cond = cond + [Or(fpIsZero(src), fpIsZero(tgt))]
     if 'nnan' in self.flags:
-      # fp is nan tgt
       cond = cond + [fpIsNaN(tgt), fpIsNaN(self.v1_smt), fpIsNaN(self.v2_smt), fpIsNaN(src)]
     if 'ninf' in self.flags:
       cond = cond + [Or(fpIsInf(tgt), fpIsInf(self.v1_smt), fpIsInf(self.v2_smt))]
@@ -888,6 +887,8 @@ class Select(Instr):
               state.eval(self.v1, defined, poison, qvars),
               state.eval(self.v2, defined, poison, qvars))
 
+  def getRelaxationCond(self, tgt, src): return mk_or([])
+  
   def getTypeConstraints(self):
     return And(self.type == self.v1.type,
                self.type == self.v2.type,
@@ -1279,9 +1280,6 @@ def toSMT(prog, idents, isSource):
       state.add(v, smt, defined, poison, qvars)
   return state
 
-def getRelaxationCond(prog, src, tgt):
-  relaxed = []
-  for bb, instrs in prog.iteritems():
-    for k,v in instrs.iteritems():
-      relaxed = relaxed + [v.getRelaxationCond(src,tgt)]
-  return relaxed 
+def getRelaxationCond(op, src, tgt):
+  return [op.getRelaxationCond(src, tgt)]
+
