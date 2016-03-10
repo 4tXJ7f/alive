@@ -175,7 +175,6 @@ class State:
 
 ################################
 class Instr(Value):
-  def getRelaxationCond(self, tgt, src): return mk_or([])
   pass
 
 ################################
@@ -887,8 +886,6 @@ class Select(Instr):
               state.eval(self.v1, defined, poison, qvars),
               state.eval(self.v2, defined, poison, qvars))
 
-  def getRelaxationCond(self, tgt, src): return mk_or([])
-  
   def getTypeConstraints(self):
     return And(self.type == self.v1.type,
                self.type == self.v2.type,
