@@ -166,6 +166,11 @@ class State:
   def __getitem__(self, k):
     return self.vars[k]
 
+  def add_other_vars(self, other_state):
+    for v, (smt, defined, poison, qvars) in other_state.vars.iteritems():
+      if v[0] != '%' and v[0] != 'C' and not v.startswith('ret_'):
+        self.vars[v] = (smt, defined, poison, qvars)
+
 
 ################################
 class Instr(Value):
@@ -596,22 +601,23 @@ class ConversionOp(Instr):
     return '%s%s %s%s' % (self.getOpName(), st, self.v.getName(), tt)
 
   def toSMT(self, defined, poison, state, qvars):
+    size = self.type.getSize()
     return {
-      self.Trunc:       lambda v: Extract(self.type.getSize()-1, 0, v),
-      self.ZExt:        lambda v: ZeroExt(self.type.getSize() -
+      self.Trunc:       lambda v: Extract(size-1, 0, v),
+      self.ZExt:        lambda v: ZeroExt(size -
                                          self.stype.getSize(), v),
-      self.SExt:        lambda v: SignExt(self.type.getSize() -
+      self.SExt:        lambda v: SignExt(size -
                                           self.stype.getSize(), v),
-      self.ZExtOrTrunc: lambda v: truncateOrZExt(v, self.type.getSize()),
-      self.Ptr2Int:     lambda v: truncateOrZExt(v, self.type.getSize()),
-      self.Int2Ptr:     lambda v: truncateOrZExt(v, self.type.getSize()),
+      self.ZExtOrTrunc: lambda v: truncateOrZExt(v, size),
+      self.Ptr2Int:     lambda v: truncateOrZExt(v, size),
+      self.Int2Ptr:     lambda v: truncateOrZExt(v, size),
       self.Bitcast:     lambda v: v,
-      self.FPTrunc:     lambda v: fpToFP(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
-      self.FPExt:       lambda v: fpToFP(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
-      self.FPToUI:      lambda v: fpToUBV(RNE(), v, BitVecSort(self.type.getSize())),
-      self.FPToSI:      lambda v: fpToSBV(RNE(), v, BitVecSort(self.type.getSize())),
-      self.UIToFP:      lambda v: fpToFPUnsigned(RNE(), v, FloatType(self.type.getSize()).sortOfFloat()),
-      self.SIToFP:      lambda v: fpToFP(v, FloatType(self.type.getSize()).sortOfFloat()),
+      self.FPTrunc:     lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
+      self.FPExt:       lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
+      self.FPToUI:      lambda v: fpToUBV(RNE(), v, BitVecSort(size)),
+      self.FPToSI:      lambda v: fpToSBV(RNE(), v, BitVecSort(size)),
+      self.UIToFP:      lambda v: fpToFPUnsigned(RNE(), v, FloatType(size).sortOfFloat()),
+      self.SIToFP:      lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
     }[self.op](state.eval(self.v, defined, poison, qvars))
 
   def getTypeConstraints(self):
@@ -885,6 +891,7 @@ class Select(Instr):
   def getTypeConstraints(self):
     return And(self.type == self.v1.type,
                self.type == self.v2.type,
+               # XXX: Enforces size, should probably be a method of IntType
                self.c.type == 1,
                self.type.getTypeConstraints())
 

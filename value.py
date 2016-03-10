@@ -344,7 +344,6 @@ class FloatType(Type):
     return self
 
   def ensureFirstClass(self):
-    # XXX: What should be here?
     return self
 
   def ensureIntPtrOrVector(self):
@@ -387,7 +386,7 @@ class FloatType(Type):
       return op(self.bitsvar, other)
     if isinstance(other, UnknownType):
       c = []
-      op2 = other.getIntType(c)
+      op2 = other.getFloatType(c)
       return mk_and(c + [op(self.bitsvar, op2.bitsvar)])
     assert False
 
@@ -409,7 +408,7 @@ class FloatType(Type):
       c += [self.bitsvar == self.getSize()]
     else:
       # Floats are assumed to be 16, 32 or 64 bit.
-      c += [Or(self.bitsvar == 16, self.bitsvar == 32)] # Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
+      c += [Or(self.bitsvar == 32)] # Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
     return And(c)
 
   def sortOfFloat(self):
@@ -661,11 +660,20 @@ class Input(Value):
     return self.getName()
 
   def toSMT(self, defined, poison, state, qvars):
-    if isinstance(self.type, FloatType):
+    t = self.type
+    if isinstance(t, UnknownType):
+      if t.myType == Type.Float:
+        t = FloatType(t.getSize())
+      elif t.myType == Type.Int:
+        t = IntType(t.getSize())
+      else:
+        assert False
+
+    if isinstance(t, FloatType):
       # TODO: create_mem_if_needed
-      return FP(self.name, self.type.sortOfFloat())
+      return FP(self.name, t.sortOfFloat())
     else:
-      v = BitVec(self.name, self.type.getSize())
+      v = BitVec(self.name, t.getSize())
       create_mem_if_needed(v, self, state, [])
       return v
 

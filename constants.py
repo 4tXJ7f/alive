@@ -255,7 +255,7 @@ class CnstBinaryOp(Constant):
 ################################
 class CnstFunction(Constant):
   abs, sbits, obits, zbits, ctlz, cttz, log2, lshr, max, sext, trunc, umax,\
-  width, zext, Last = range(15)
+  width, zext, sitofp, fptosi, Last = range(17)
 
   opnames = {
     abs:   'abs',
@@ -272,6 +272,8 @@ class CnstFunction(Constant):
     umax:  'umax',
     width: 'width',
     zext:  'zext',
+    sitofp: 'sitofp',
+    fptosi: 'fptosi',
   }
   opids = {v:k for k,v in opnames.items()}
 
@@ -290,13 +292,34 @@ class CnstFunction(Constant):
     umax:  2,
     width: 1,
     zext:  1,
+    sitofp: 1,
+    fptosi: 1,
+  }
+
+  ret_types = {
+    abs:   IntType(),
+    sbits: IntType(),
+    obits: IntType(),
+    zbits: IntType(),
+    ctlz:  IntType(),
+    cttz:  IntType(),
+    log2:  IntType(),
+    lshr:  IntType(),
+    max:   IntType(),
+    sext:  IntType(),
+    trunc: IntType(),
+    umax:  IntType(),
+    width: IntType(),
+    zext:  IntType(),
+    sitofp: FloatType(),
+    fptosi: IntType(),
   }
 
   def __init__(self, op, args, type):
     assert 0 <= op < self.Last
     for a in args:
       assert isinstance(a, Value)
-    assert isinstance(type, IntType)
+    assert isinstance(type, (IntType, FloatType))
 
     self.op = op
     self.args = args
@@ -336,6 +359,8 @@ class CnstFunction(Constant):
       self.umax:  lambda a,b: allTyEqual([a,b,self], Type.Int),
       self.width: lambda a: [],
       self.zext:  lambda a: [self.type > a.type],
+      self.sitofp: lambda a: allTyEqual([a], Type.Int) + allTyEqual([self], Type.Float),
+      self.fptosi: lambda a: allTyEqual([a], Type.Float) + allTyEqual([self], Type.Int),
     }[self.op](*self.args)
 
     return mk_and([v.getTypeConstraints() for v in self.args] +\
@@ -367,6 +392,8 @@ class CnstFunction(Constant):
       self.umax:  lambda a,b: ([], If(UGT(a,b), a, b)),
       self.width: lambda a: (None, BitVecVal(a.size(), size)),
       self.zext:  lambda a: ([], ZeroExt(size - a.size(), a)),
+      self.sitofp: lambda a: ([], fpToFP(RNE(), a, FloatType(size).sortOfFloat())),
+      self.fptosi: lambda a: ([], fpToSBV(RNE(), a, BitVecSort(size))),
     }[self.op](*args)
 
     if d is None:
@@ -435,6 +462,14 @@ class CnstFunction(Constant):
     if self.op == CnstFunction.zext:
       return False, self.args[0].get_APInt(manager).dot('zext',
         [manager.get_llvm_type(self).arr('getScalarSizeInBits',[])])
+
+#     if self.op == CnstFunction.sitofp:
+#       return False, self.args[0].get_APInt(manager).dot('sitofp',
+#         [manager.get_llvm_type(self).arr('', [])])
+# 
+#     if self.op == CnstFunction.fptosi:
+#       return False, self.args[0].get_APInt(manager).dot('fptosi',
+#         [manager.get_llvm_type(self).arr('', [])])
 
     raise AliveError(self.opnames[self.op] + ' not implemented')
 

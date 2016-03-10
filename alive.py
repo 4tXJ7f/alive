@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import signal
 import argparse, glob, re, sys, time
 from language import *
 from parser import parse_llvm, parse_opt_file
 from gen import generate_switched_suite
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 def block_model(s, sneg, m):
   # First simplify the model.
@@ -347,8 +350,11 @@ gbl_prev_flags = []
 def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
   srcv = toSMT(src, ident_src, True)
   tgtv = toSMT(tgt, ident_tgt, False)
-  
+  # XXX: this is rather hack-y
+  srcv.add_other_vars(tgtv)
+
   pre_d, pre = pre.toSMT(srcv)
+
   extra_cnstrs = pre_d + pre +\
                  srcv.getAllocaConstraints() + tgtv.getAllocaConstraints()
 

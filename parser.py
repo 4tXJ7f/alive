@@ -271,7 +271,7 @@ def parseCnstFunction(toks):
   check_not_src()
   op = CnstFunction.getOpId(toks[0])
   args = [parseOperand(toks[i], UnknownType()) for i in range(1, len(toks))]
-  return CnstFunction(op, args, IntType())
+  return CnstFunction(op, args, CnstFunction.ret_types[op])
 
 def parseRecursive(toks, l):
   toks = toks[0]
@@ -544,6 +544,11 @@ def _parseOpt(s, loc, toks):
   save_parse_str(tgt, tgt_line)
   tgt, ident_tgt, used_tgt, skip_tgt = parse_llvm(tgt)
 
+  ident_all = ident_tgt
+  for k, v in ident_tgt.iteritems():
+    if k not in ident_src:
+      ident_all[k] = v
+
   # Move unused target instrs (copied from source) to the end.
   lst = []
   for bb, instrs in tgt.iteritems():
@@ -557,7 +562,7 @@ def _parseOpt(s, loc, toks):
 
   parsing_phase = Pre
   save_parse_str(pre, pre_line)
-  pre = parse_pre(pre, ident_src)
+  pre = parse_pre(pre, ident_all)
   return name, pre, src, tgt, ident_src, ident_tgt, used_src, used_tgt, skip_tgt
 
 def parseOpt(s, loc, toks):

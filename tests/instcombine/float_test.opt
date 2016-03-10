@@ -1,10 +1,36 @@
-Name: FAddToAdd:AddSub:1354
-Pre: WillNotOverflowSignedAdd(%x, fptosi(C)) && (sitofp(fptosi(C)) == C)
+Name: SelectZero:AddSub:1399-1
+%a = select %c, -0.0, C1
+%b = select %c, C2, -0.0
+%r = fadd %a, %b
+  =>
+%r = select %c, C2, C1
+
+Name: SelectZero:AddSub:1402-1
+%a = select %c, C1, -0.0
+%b = select %c, -0.0, C2
+%r = fadd %a, %b
+  =>
+%r = select %c, C1, C2
+
+Name: FAddToAdd:AddSub:1374
+Pre: hasOneUse(%a) && hasOneUse(%b) && WillNotOverflowSignedAdd(%x, %y)
+%a = sitofp %x
+%b = sitofp %y
+%r = fadd %a, %b
+  =>
+%c = add nsw %x, %y
+%r = sitofp %c
+
+
+Name: FAddToAdd:AddSub:1360
+Pre: hasOneUse(%a) && WillNotOverflowSignedAdd(%x, fptosi(C)) && (sitofp(%conv) == C)
 %a = sitofp %x
 %r = fadd %a, C
   =>
-%b = add nsw %x, (fptosi C)
+%conv = fptosi(C)
+%b = add nsw %x, %conv
 %r = sitofp %b
+
 
 Name: AddZero:InstructionSimplify:806-1
 Pre: CannotBeNegativeZero(%x)
@@ -67,14 +93,8 @@ Name: SubNegToPlus:AddSub:1744
 %r = fadd %x, %y
 
 
-Name: ZeroToNegZero:AddSub:1730
-%r = fsub 0.0, %x
-  =>
-%r = fsub -0.0, %x
-
-
 Name: addToSubRev
-%a = fsub 0.0, %X
+%a = fsub -0.0, %X
 %r = fadd %a, %Y
   =>
 %r = fsub %Y, %X
