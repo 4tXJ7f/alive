@@ -119,3 +119,9 @@ Pre: AnyZero(C0)
 %r = fadd ninf %x, %a
   =>
 %r = 0.0
+
+Name: UndefDivX:InstructionSimplify:1117
+%r = fdiv undef, %x
+  =>
+%r = undef
+

@@ -408,7 +408,7 @@ class FloatType(Type):
       c += [self.bitsvar == self.getSize()]
     else:
       # Floats are assumed to be 16, 32 or 64 bit.
-      c += [Or(self.bitsvar == 32)] # Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
+      c += [Or(self.bitsvar == 16, self.bitsvar == 32)] # Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
     return And(c)
 
   def sortOfFloat(self):

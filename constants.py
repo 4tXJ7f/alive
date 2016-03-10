@@ -97,10 +97,29 @@ class UndefVal(Constant):
     return self.type.getTypeConstraints()
 
   def toSMT(self, defined, poison, state, qvars):
-    v = BitVec('undef' + self.id, self.type.getSize())
-    qvars += [v]
-    create_mem_if_needed(v, self, state, [v])
-    return v
+    # XXX: Similar to Input.toSMT -> refactor
+    t = self.type
+    if isinstance(t, UnknownType):
+      if t.myType == Type.Float:
+        t = FloatType(t.getSize())
+      elif t.myType == Type.Int:
+        t = IntType(t.getSize())
+      else:
+        assert False
+
+    if isinstance(t, FloatType):
+      v = FP('undef' + self.id, t.sortOfFloat())
+      qvars += [v]
+      # XXX: create_mem_if_needed?
+      # create_mem_if_needed(v, self, state, [v])
+      return v
+    elif isinstance(t, IntType):
+      v = BitVec('undef' + self.id, t.getSize())
+      qvars += [v]
+      create_mem_if_needed(v, self, state, [v])
+      return v
+    else:
+      assert False
 
   def register_types(self, manager):
     manager.register_type(self, self.type, UnknownType())
