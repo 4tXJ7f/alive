@@ -337,8 +337,9 @@ type <<= (Literal('i') + posnum + ZeroOrMore(Literal('*'))).\
 opttype = Optional(type).setParseAction(pa(parseOptType))
 i1 = Optional('i1').setParseAction(lambda toks : IntType(1))
 
-flags = ZeroOrMore(Literal('nsw') | Literal('nuw') | Literal('exact')).\
-        setParseAction(pa(lambda toks : [toks]))
+flags = ZeroOrMore(Literal('nsw') | Literal('nuw') | Literal('exact') \
+                   | Literal('nnan') | Literal('ninf') | Literal('nsz')).\
+                   setParseAction(pa(lambda toks : [toks]))
 operand = cnst_expr | Literal('undef')
 
 typeoperand = (opttype + operand).setParseAction(pa(parseTypeOperand))

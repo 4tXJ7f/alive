@@ -255,7 +255,9 @@ class BinOp(Instr):
     self.v2 = v2
     self.flags = list(flags)
     self._check_op_flags()
-
+    self.v1_smt = None
+    self.v2_smt = None
+    
   def getOpName(self):
     return self.opnames[self.op]
 
@@ -296,11 +298,13 @@ class BinOp(Instr):
       self.And:  [],
       self.Or:   [],
       self.Xor:  [],
-      # XXX: Check what is needed here
-      self.FAdd: [],
-      self.FSub: [],
-      self.FMul: [],
-      self.FDiv: [],
+      # remaining:
+      # arcp (reciprocal allowed)
+      # fast (algebraically equivalent allowed)
+      self.FAdd: ['nnan', 'ninf', 'nsz'], 
+      self.FSub: ['nnan', 'ninf', 'nsz'],
+      self.FMul: ['nnan', 'ninf', 'nsz'],
+      self.FDiv: ['nnan', 'ninf', 'nsz'],
     }[self.op]
 
     for f in self.flags:
@@ -309,7 +313,7 @@ class BinOp(Instr):
 
   def _genSMTDefConds(self, v1, v2, poison):
     bits = self.type.getSize()
-
+    
     poison_conds = {
       self.Add: {'nsw': lambda a,b: SignExt(1,a)+SignExt(1,b) == SignExt(1,a+b),
                  'nuw': lambda a,b: ZeroExt(1,a)+ZeroExt(1,b) == ZeroExt(1,a+b),
@@ -339,11 +343,11 @@ class BinOp(Instr):
       self.And: {},
       self.Or:  {},
       self.Xor: {},
-      # XXX: Check what is needed here
-      self.FAdd: {},
-      self.FSub: {},
-      self.FMul: {},
-      self.FDiv: {},
+      # Do not need for nnan ninf nsz
+      self.FAdd:{},
+      self.FSub:{},
+      self.FMul:{},
+      self.FDiv:{},
     }[self.op]
 
     if do_infer_flags():
@@ -352,6 +356,8 @@ class BinOp(Instr):
         poison += [Implies(bit == 1, fn(v1, v2))]
     else:
       for f in self.flags:
+        # these flags are not poison 
+        if f == 'nsz' or f == 'nnan' or f == 'ninf': continue
         poison += [poison_conds[f](v1, v2)]
 
     # definedness of the instruction
@@ -379,6 +385,8 @@ class BinOp(Instr):
   def toSMT(self, defined, poison, state, qvars):
     v1 = state.eval(self.v1, defined, poison, qvars)
     v2 = state.eval(self.v2, defined, poison, qvars)
+    self.v1_smt = v1
+    self.v2_smt = v2
     defined += self._genSMTDefConds(v1, v2, poison)
     return {
       self.Add:  lambda a,b: a + b,
@@ -395,12 +403,28 @@ class BinOp(Instr):
       self.Or:   lambda a,b: a | b,
       self.Xor:  lambda a,b: a ^ b,
       # XXX: Support for rounding modes
+      # Handle flag issues? 
       self.FAdd: lambda a,b: fpAdd(RNE(), a, b),
       self.FSub: lambda a,b: fpNeg(b) if isinstance(a, FPNumRef) and a.isZero() and a.isNegative() else fpSub(RNE(), a, b),
       self.FMul: lambda a,b: fpMul(RNE(), a, b),
       self.FDiv: lambda a,b: fpDiv(RNE(), a, b),
-    }[self.op](v1, v2)
+    }[self.op](v1, v2) 
 
+  # Relaxation for fast math flags
+  def getRelaxationCond(self, tgt, src):
+    cond = []
+    if 'nsz' in self.flags:
+      print tgt
+      print src
+      cond = cond + [Or(fpIsZero(src), fpIsZero(tgt))]
+    if 'nnan' in self.flags:
+      # fp is nan tgt
+      cond = cond + [fpIsNaN(tgt), fpIsNaN(self.v1_smt), fpIsNaN(self.v2_smt), fpIsNaN(src)]
+    if 'ninf' in self.flags:
+      cond = cond + [Or(fpIsInf(tgt), fpIsInf(self.v1_smt), fpIsInf(self.v2_smt))]
+    return mk_or(cond)
+    
+  
   def getTypeConstraints(self):
     return And(self.type == self.v1.type,
                self.type == self.v2.type,
@@ -1247,3 +1271,10 @@ def toSMT(prog, idents, isSource):
       smt = v.toSMT(defined, poison, state, qvars)
       state.add(v, smt, defined, poison, qvars)
   return state
+
+def getRelaxationCond(prog, src, tgt):
+  relaxed = []
+  for bb, instrs in prog.iteritems():
+    for k,v in instrs.iteritems():
+      relaxed = relaxed + [v.getRelaxationCond(src,tgt)]
+  return relaxed 

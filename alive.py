@@ -142,7 +142,7 @@ def check_expr(qvars, expr, error):
 
   s = tactic.solver()
   s.add(expr)
-
+  
   if __debug__:
     gen_benchmark(s)
 
@@ -226,7 +226,7 @@ def get_smt_vars(f):
   return ret
 
 
-def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
+def check_refinement(srcprog, srcv, tgtv, types, extra_cnstrs, users):
   for k,v in srcv.iteritems():
     # skip instructions only on one side; assumes they remain unchanged
     if k[0] == 'C' or not tgtv.has_key(k):
@@ -236,10 +236,13 @@ def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
     (b, defb, poisonb, qvarsb) = tgtv[k]
     defb = mk_and(defb)
     poisonb = mk_and(poisonb)
-
+        
     n_users = users[k]
     base_cnstr = defa + poisona + extra_cnstrs + n_users
 
+    relax = getRelaxationCond(srcprog, a, b)
+
+    # Already adds in preconditions before the three checks 
     # Check if domain of defined values of Src implies that of Tgt.
     check_expr(qvars, base_cnstr + [mk_not(defb)], lambda s :
       ("Domain of definedness of Target is smaller than Source's for %s %s\n"
@@ -253,8 +256,9 @@ def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
        str_model(s, a), 'poison', k, srcv, tgtv, types))
 
     # Check that final values of vars are equal.
-    cond = [a != b]
-
+    cond = [And(a != b, Not(mk_or(relax)))]
+    print "COND"
+    print cond
     check_expr(qvars, base_cnstr + cond, lambda s :
       ("Mismatch in values of %s %s\n" % (var_type(k, types), k),
        str_model(s, a), str_model(s, b), k, srcv, tgtv, types))
@@ -343,6 +347,7 @@ gbl_prev_flags = []
 def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
   srcv = toSMT(src, ident_src, True)
   tgtv = toSMT(tgt, ident_tgt, False)
+  
   pre_d, pre = pre.toSMT(srcv)
   extra_cnstrs = pre_d + pre +\
                  srcv.getAllocaConstraints() + tgtv.getAllocaConstraints()
@@ -367,7 +372,7 @@ def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
     flgs = infer_flags(srcv, tgtv, types, extra_cnstrs, gbl_prev_flags, users)
     gbl_prev_flags = [simplify_pre(mk_and(gbl_prev_flags + [flgs]))]
   else:
-    check_refinement(srcv, tgtv, types, extra_cnstrs, users)
+    check_refinement(src, srcv, tgtv, types, extra_cnstrs, users)
 
   # 3) check that the final memory state is similar in both programs
   idx = BitVec('idx', get_ptr_size())
@@ -380,7 +385,6 @@ def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
 
 def check_opt(opt):
   name, pre, src, tgt, ident_src, ident_tgt, used_src, used_tgt, skip_tgt = opt
-
   print '----------------------------------------'
   print 'Optimization: ' + name
   print 'Precondition: ' + str(pre)
