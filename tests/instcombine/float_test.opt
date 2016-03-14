@@ -1,3 +1,14 @@
+Name: UndefDivX:InstructionSimplify:1117
+%r = fdiv %x, undef
+  =>
+%r = undef
+
+Name: UndefDivX:InstructionSimplify:1117
+%r = fdiv undef, %x
+  =>
+%r = undef
+
+
 Name: SubNegToPlus:AddSub:1749
 %a = fsub -0.0, %y
 %b = fptrunc %a
