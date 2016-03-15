@@ -248,7 +248,6 @@ class BinOp(Instr):
   }
   opids = {v:k for k, v in opnames.items()}
 
-
   def __init__(self, op, type, v1, v2, flags = []):
     assert isinstance(type, Type)
     assert isinstance(v1, Value)
@@ -263,6 +262,12 @@ class BinOp(Instr):
 
   def getOpName(self):
     return self.opnames[self.op]
+
+  def fpFmod(self, x, y):
+    abs_y = fpAbs(y)
+    result = fpRem(fpAbs(x), abs_y)
+    result = If(fpIsNegative(result), result + abs_y, result)
+    return If(Xor(fpIsNegative(x), fpIsNegative(result)), fpNeg(result), result)
 
   @staticmethod
   def getOpId(name):
