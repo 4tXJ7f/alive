@@ -225,7 +225,7 @@ class CopyOperand(Instr):
 ################################
 class BinOp(Instr):
   Add, Sub, Mul, UDiv, SDiv, URem, SRem, Shl, AShr, LShr, And, Or, Xor, FAdd,\
-  FSub, FMul, FDiv, Last = range(18)
+  FSub, FMul, FDiv, FRem, Last = range(19)
 
   opnames = {
     Add:  'add',
@@ -245,6 +245,7 @@ class BinOp(Instr):
     FSub: 'fsub',
     FMul: 'fmul',
     FDiv: 'fdiv',
+    FRem: 'frem',
   }
   opids = {v:k for k, v in opnames.items()}
 
@@ -278,7 +279,7 @@ class BinOp(Instr):
 
   @staticmethod
   def isFloatOp(op):
-    return op in [BinOp.FAdd, BinOp.FSub, BinOp.FMul, BinOp.FDiv]
+    return op in [BinOp.FAdd, BinOp.FSub, BinOp.FMul, BinOp.FDiv, BinOp.FRem]
 
   def __repr__(self):
     t = str(self.type)
@@ -311,6 +312,7 @@ class BinOp(Instr):
       self.FSub: [],
       self.FMul: [],
       self.FDiv: [],
+      self.FRem: [],
     }[self.op]
 
     for f in self.flags:
@@ -354,6 +356,7 @@ class BinOp(Instr):
       self.FSub: {},
       self.FMul: {},
       self.FDiv: {},
+      self.FRem: {},
     }[self.op]
 
     if do_infer_flags():
@@ -379,11 +382,11 @@ class BinOp(Instr):
       self.And:  lambda a,b: [],
       self.Or:   lambda a,b: [],
       self.Xor:  lambda a,b: [],
-      # XXX: Check what is needed here
       self.FAdd: lambda a,b: [],
       self.FSub: lambda a,b: [],
       self.FMul: lambda a,b: [],
       self.FDiv: lambda a,b: [],
+      self.FRem: lambda a,b: [],
       }[self.op](v1,v2)
 
   def toSMT(self, defined, poison, state, qvars):
@@ -409,6 +412,7 @@ class BinOp(Instr):
       self.FSub: lambda a,b: fpNeg(b) if isinstance(a, FPNumRef) and a.isZero() and a.isNegative() else fpSub(RNE(), a, b),
       self.FMul: lambda a,b: fpMul(RNE(), a, b),
       self.FDiv: lambda a,b: fpDiv(RNE(), a, b),
+      self.FRem: lambda a,b: self.fpFmod(a, b),
     }[self.op](v1, v2)
 
   def getTypeConstraints(self):
@@ -434,6 +438,7 @@ class BinOp(Instr):
     FSub: 'FSub',
     FMul: 'FMul',
     FDiv: 'FDiv',
+    FRem: 'FRem',
   }
 
   def register_types(self, manager):

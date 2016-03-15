@@ -15,3 +15,8 @@ Name: UndefDivX:InstructionSimplify:1117
   =>
 %r = undef
 
+Name: RemOfSelect:MulDivRem:716
+%a = select %c, 0.0, C
+%r = frem %x, %a
+  =>
+%r = frem %x, C
