@@ -120,8 +120,37 @@ Pre: AnyZero(C0)
   =>
 %r = 0.0
 
-Name: UndefDivX:InstructionSimplify:1117
-%r = fdiv undef, %x
+Name: UndefFRemX:InstructionSimplify:1257
+%r = frem undef, %x
   =>
 %r = undef
 
+Name: UndefFRemX:InstructionSimplify:1261
+%r = frem %x, undef
+  =>
+%r = undef
+
+Name: 0FRemX:InstructionSimplify:1267
+Pre: AnyZero(C0)
+%r = frem nnan nsz C0, %x
+  =>
+%r = C0
+
+; Ignore symmetric case
+Name: NegMulNeg:MulDivRem:654-2
+Pre: AnyZero(C0) && AnyZero(C1)
+%a = fsub C0, %x
+%b = fsub C1, %y
+%r = fmul nsz %a, %b
+  =>
+%r = fmul nsz %x, %y
+
+
+; Ignore symmetric case
+Name: NegMulNeg:MulDivRem:660-2
+Pre: hasOneUse(%a) && AnyZero(C0)
+%a = fsub C0, %x
+%r = fmul nsz %a, %y
+  =>
+%b = fmul nsz %x, %y
+%r = fsub -0.0, %b

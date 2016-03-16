@@ -4,3 +4,19 @@ Name: ZeroSubZeroSub:InstructionSimplify:852-2
 %r = fsub 0.0, %a
   =>
 %r = %x
+
+Name: UndefDivX:InstructionSimplify:1117
+%r = fdiv %x, undef
+  =>
+%r = undef
+
+Name: UndefDivX:InstructionSimplify:1117
+%r = fdiv undef, %x
+  =>
+%r = undef
+
+Name: RemOfSelect:MulDivRem:716
+%a = select %c, 0.0, C
+%r = frem %x, %a
+  =>
+%r = frem %x, C

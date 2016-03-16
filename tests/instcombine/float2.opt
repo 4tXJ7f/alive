@@ -58,3 +58,88 @@ Pre: hasExactInverse(C)
 %r = fdiv %X, C
   =>
 %r = fmul %X, 1.0 / C
+
+
+; (x * y) +/- (x * z) => x * (y +/- z)
+
+
+Name: factorAddMul:AddSub:471-1
+%a = fmul %x, %y
+%b = fmul %x, %z
+%r = fadd fast %a, %b
+  =>
+%c = fadd %y, %z
+%r = fmul %x, %c
+
+
+Name: factorAddMul:AddSub:473-1
+%a = fmul %y, %x
+%b = fmul %z, %x
+%r = fadd fast %a, %b
+  =>
+%c = fadd %y, %z
+%r = fmul %x, %c
+
+
+Name: factorAddMul:AddSub:471-2/473-2
+%a = fmul %x, %y
+%b = fmul %z, %x
+%r = fadd fast %a, %b
+  =>
+%c = fadd %y, %z
+%r = fmul %x, %c
+
+
+Name: factorSubMul:AddSub:471-1
+%a = fmul %x, %y
+%b = fmul %x, %z
+%r = fsub fast %a, %b
+  =>
+%c = fsub %y, %z
+%r = fmul %x, %c
+
+
+Name: factorSubMul:AddSub:473-1
+%a = fmul %y, %x
+%b = fmul %z, %x
+%r = fsub fast %a, %b
+  =>
+%c = fsub %y, %z
+%r = fmul %x, %c
+
+
+Name: factorSubMul:AddSub:471-2/473-2
+%a = fmul %x, %y
+%b = fmul %z, %x
+%r = fsub fast %a, %b
+  =>
+%c = fsub %y, %z
+%r = fmul %x, %c
+
+
+; (y / x) +/- (z / x) => (y +/- z) /x
+
+
+Name: factorAddDiv:AddSub:480
+%a = fdiv %y, %x
+%b = fdiv %z, %x
+%r = fadd fast %a, %b
+  =>
+%c = fadd %y, %z
+%r = fdiv %c, %x
+
+
+Name: factorSubDiv:AddSub:480
+%a = fdiv %y, %x
+%b = fdiv %z, %x
+%r = fsub fast %a, %b
+  =>
+%c = fsub %y, %z
+%r = fdiv %c, %x
+
+Name: MulConst:MulDivRem:494
+Pre: isNormal(C0 * C)
+%a = fmul %x, C0
+%r = fmul fast %a, C
+  =>
+%r = fmul fast %x, C0 * C

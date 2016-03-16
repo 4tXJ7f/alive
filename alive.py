@@ -187,7 +187,9 @@ def str_model(s, v):
   if isinstance(val, BoolRef):
     return "true" if is_true(val) else "false"
   elif isinstance(val, FPNumRef):
-    return "%s" % val
+    bv_val = simplify(fpToIEEEBV(fpToFP(RNE(), val, Float64())))
+    hex_str = val2binhex(bv_val.as_long(), bv_val.size())
+    return "{} ({})".format(val, hex_str)
   valu = val.as_long()
   vals = val.as_signed_long()
   bin = val2binhex(valu, val.size())

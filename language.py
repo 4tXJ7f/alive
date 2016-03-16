@@ -89,8 +89,8 @@ class State:
     fastMathInfo = v.getFastConds(smt)
     finalSMT = fastMathInfo[0]
     new_qvars = fastMathInfo[1]
-    print finalSMT
-    print
+#    print finalSMT
+#    print
     # Update the formulas with the new fast math information
     qvars += new_qvars
     # Adds a function to the vars that defines a relaxation for the nsz fast math flag
@@ -236,7 +236,7 @@ class CopyOperand(Instr):
 ################################
 class BinOp(Instr):
   Add, Sub, Mul, UDiv, SDiv, URem, SRem, Shl, AShr, LShr, And, Or, Xor, FAdd,\
-  FSub, FMul, FDiv, Last = range(18)
+  FSub, FMul, FDiv, FRem, Last = range(19)
 
   opnames = {
     Add:  'add',
@@ -256,9 +256,9 @@ class BinOp(Instr):
     FSub: 'fsub',
     FMul: 'fmul',
     FDiv: 'fdiv',
+    FRem: 'frem',
   }
   opids = {v:k for k, v in opnames.items()}
-
 
   def __init__(self, op, type, v1, v2, flags = []):
     assert isinstance(type, Type)
@@ -297,6 +297,12 @@ class BinOp(Instr):
   def getOpName(self):
     return self.opnames[self.op]
 
+  def fpFmod(self, x, y):
+    abs_y = fpAbs(y)
+    result = fpRem(fpAbs(x), abs_y)
+    result = If(fpIsNegative(result), result + abs_y, result)
+    return If(Xor(fpIsNegative(x), fpIsNegative(result)), fpNeg(result), result)
+
   @staticmethod
   def getOpId(name):
     try:
@@ -306,7 +312,7 @@ class BinOp(Instr):
 
   @staticmethod
   def isFloatOp(op):
-    return op in [BinOp.FAdd, BinOp.FSub, BinOp.FMul, BinOp.FDiv]
+    return op in [BinOp.FAdd, BinOp.FSub, BinOp.FMul, BinOp.FDiv, BinOp.FRem]
 
   def __repr__(self):
     t = str(self.type)
@@ -341,7 +347,8 @@ class BinOp(Instr):
       self.FSub: ['nnan', 'ninf', 'nsz'],
       self.FMul: ['nnan', 'ninf', 'nsz'],
       self.FDiv: ['nnan', 'ninf', 'nsz'],
-    }[self.op]
+      self.FRem: ['nnan', 'ninf', 'nsz'],
+    }[self.op] 
 
     for f in self.flags:
       if f not in allowed_flags:
@@ -384,6 +391,7 @@ class BinOp(Instr):
       self.FSub:{},
       self.FMul:{},
       self.FDiv:{},
+      self.FRem:{},
     }[self.op]
 
     if do_infer_flags():
@@ -416,6 +424,7 @@ class BinOp(Instr):
       self.FSub: lambda a,b: [],
       self.FMul: lambda a,b: [],
       self.FDiv: lambda a,b: [],
+      self.FRem: lambda a,b: [],
       }[self.op](v1,v2)
 
   def toSMT(self, defined, poison, state, qvars):
@@ -442,6 +451,7 @@ class BinOp(Instr):
       self.FSub: lambda a,b: fpNeg(b) if isinstance(a, FPNumRef) and a.isZero() and a.isNegative() else fpSub(RNE(), a, b),
       self.FMul: lambda a,b: fpMul(RNE(), a, b),
       self.FDiv: lambda a,b: fpDiv(RNE(), a, b),
+      self.FRem: lambda a,b: self.fpFmod(a, b),
     }[self.op](v1, v2) 
 
   # Relaxation for nsz flag
@@ -474,6 +484,7 @@ class BinOp(Instr):
     FSub: 'FSub',
     FMul: 'FMul',
     FDiv: 'FDiv',
+    FRem: 'FRem',
   }
 
   def register_types(self, manager):
