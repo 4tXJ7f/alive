@@ -84,8 +84,16 @@ class State:
   def add(self, v, smt, defined, poison, qvars):
     if v.getUniqueName() == '':
       return
-    # Now this adds a function to the vars 
-    self.vars[v.getUniqueName()] = (smt, self.defined + defined, poison, qvars, \
+
+    # could probably update qvars in the function but....
+    fastMathInfo = v.getFastConds(smt)
+    finalSMT = fastMathInfo[0]
+    new_qvars = fastMathInfo[1]
+
+    # Update the formulas with the new fast math information
+    qvars += new_qvars
+    # Adds a function to the vars that defines a relaxation for the nsz fast math flag
+    self.vars[v.getUniqueName()] = (finalSMT, self.defined + defined, poison, qvars, \
                                     lambda a,b: getRelaxationCond(v,a,b))
     if isinstance(v, TerminatorInst):
       for (bb,cond) in v.getSuccessors(self):
@@ -264,7 +272,27 @@ class BinOp(Instr):
     self._check_op_flags()
     self.v1_smt = None
     self.v2_smt = None
+
+  def getFastConds(self, expr):
+    undefNames = []
+    ctr = [0]
     
+    def getNewUndefName():
+      newVar = FP(self.getUniqueName() + "undef" + str(ctr[0]),
+                  self.type.sortOfFloat())
+      undefNames.append(newVar)
+      ctr[0] += 1
+      return newVar
+
+    if 'nnan' in self.flags:
+      expr = If(Or(fpIsNaN(self.v1_smt), fpIsNaN(self.v2_smt), fpIsNaN(expr)),
+                getNewUndefName(), expr)
+    if 'ninf' in self.flags:
+      expr = If(Or(fpIsInf(self.v1_smt), fpIsNaN(self.v2_smt), fpIsNaN(expr)),
+                getNewUndefName(), expr)
+    return (expr, undefNames)
+
+  
   def getOpName(self):
     return self.opnames[self.op]
 
@@ -382,7 +410,7 @@ class BinOp(Instr):
       self.And:  lambda a,b: [],
       self.Or:   lambda a,b: [],
       self.Xor:  lambda a,b: [],
-      # XXX: Check what is needed here
+      # Nothing, the instruction is defined no matter what
       self.FAdd: lambda a,b: [],
       self.FSub: lambda a,b: [],
       self.FMul: lambda a,b: [],
@@ -409,26 +437,19 @@ class BinOp(Instr):
       self.And:  lambda a,b: a & b,
       self.Or:   lambda a,b: a | b,
       self.Xor:  lambda a,b: a ^ b,
-      # XXX: Support for rounding modes
-      # Handle flag issues? 
-      self.FAdd: lambda a,b: fpAdd(RNE(), a, b),
+      self.FAdd: lambda a,b: fpAdd(RNE(), a, b), 
       self.FSub: lambda a,b: fpNeg(b) if isinstance(a, FPNumRef) and a.isZero() and a.isNegative() else fpSub(RNE(), a, b),
       self.FMul: lambda a,b: fpMul(RNE(), a, b),
       self.FDiv: lambda a,b: fpDiv(RNE(), a, b),
     }[self.op](v1, v2) 
 
-  # Relaxation for fast math flags
+  # Relaxation for nsz flag
   def getRelaxationCond(self, tgt, src):
     cond = []
-    if 'nsz' in self.flags:
-      cond = cond + [Or(fpIsZero(src), fpIsZero(tgt))]
-    if 'nnan' in self.flags:
-      cond = cond + [fpIsNaN(tgt), fpIsNaN(self.v1_smt), fpIsNaN(self.v2_smt), fpIsNaN(src)]
-    if 'ninf' in self.flags:
-      cond = cond + [Or(fpIsInf(tgt), fpIsInf(self.v1_smt), fpIsInf(self.v2_smt))]
+    if 'nsz' in self.flags: cond = cond + [Or(fpIsZero(src), fpIsZero(tgt))]
     return mk_or(cond)
     
-  
+
   def getTypeConstraints(self):
     return And(self.type == self.v1.type,
                self.type == self.v2.type,
@@ -1281,3 +1302,4 @@ def toSMT(prog, idents, isSource):
 def getRelaxationCond(op, src, tgt):
   return [op.getRelaxationCond(src, tgt)]
 
+def getNinfCond(a, b, expr): pass

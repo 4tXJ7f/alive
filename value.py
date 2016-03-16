@@ -544,6 +544,8 @@ class Value:
     return False
 
   def getRelaxationCond(self, tgt, src): return mk_or([])
+
+  def getFastConds(self, smt): return (smt, [])
   
   def setName(self, name):
     self.name = name

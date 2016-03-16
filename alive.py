@@ -260,7 +260,7 @@ def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
 
     # Check that final values of vars are equal.
     cond = [And(a != b, Not(mk_or(relax)))]
-    print relax
+
     check_expr(qvars, base_cnstr + cond, lambda s :
       ("Mismatch in values of %s %s\n" % (var_type(k, types), k),
        str_model(s, a), str_model(s, b), k, srcv, tgtv, types))
@@ -351,7 +351,7 @@ def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
   tgtv = toSMT(tgt, ident_tgt, False)
   # XXX: this is rather hack-y
   srcv.add_other_vars(tgtv)
-
+  
   pre_d, pre = pre.toSMT(srcv)
 
   extra_cnstrs = pre_d + pre +\
