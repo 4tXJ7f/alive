@@ -1,12 +1,20 @@
-Name: UndefDivX:InstructionSimplify:1117
-%r = fdiv %x, undef
+; Ignore symmetric case
+Name: NegMulNeg:MulDivRem:654-1
+%a = fsub -0.0, %x
+%b = fsub -0.0, %y
+%r = fmul %a, %b
   =>
-%r = undef
+%r = fmul %x, %y
 
-Name: UndefDivX:InstructionSimplify:1117
-%r = fdiv undef, %x
+
+; Ignore symmetric case
+Name: NegMulNeg:MulDivRem:660-1
+Pre: hasOneUse(%a)
+%a = fsub -0.0, %x
+%r = fmul %a, %y
   =>
-%r = undef
+%b = fmul %x, %y
+%r = fsub -0.0, %b
 
 
 Name: SubNegToPlus:AddSub:1749
