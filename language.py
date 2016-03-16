@@ -89,7 +89,8 @@ class State:
     fastMathInfo = v.getFastConds(smt)
     finalSMT = fastMathInfo[0]
     new_qvars = fastMathInfo[1]
-
+    print finalSMT
+    print
     # Update the formulas with the new fast math information
     qvars += new_qvars
     # Adds a function to the vars that defines a relaxation for the nsz fast math flag
@@ -288,7 +289,7 @@ class BinOp(Instr):
       expr = If(Or(fpIsNaN(self.v1_smt), fpIsNaN(self.v2_smt), fpIsNaN(expr)),
                 getNewUndefName(), expr)
     if 'ninf' in self.flags:
-      expr = If(Or(fpIsInf(self.v1_smt), fpIsNaN(self.v2_smt), fpIsNaN(expr)),
+      expr = If(Or(fpIsInf(self.v1_smt), fpIsInf(self.v2_smt), fpIsInf(expr)),
                 getNewUndefName(), expr)
     return (expr, undefNames)
 

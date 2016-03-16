@@ -94,28 +94,28 @@ Pre: AnyZero(C01) && AnyZero(C02)
 
 Name: XminusX:InstructionSimplify:820-1
 Pre: AnyZero(C0)
-%a = fsub nnan C0, %x
-%r = fadd %x, %a
+%a = fsub nnan ninf C0, %x
+%r = fadd nnan %x, %a
   =>
 %r = 0.0
 
 Name: XminusX:InstructionSimplify:820-2
 Pre: AnyZero(C0)
 %a = fsub C0, %x
-%r = fadd nnan %x, %a
+%r = fadd ninf nnan %x, %a
   =>
 %r = 0.0
 
 Name: XPlusMinusX:InstructionSimplify:821-1
 Pre: AnyZero(C0)
 %a = fsub ninf C0, %x
-%r = fadd %x, %a
+%r = fadd nnan %x, %a
   =>
 %r = 0.0
 
 Name: XPlusMinusX:InstructionSimplify:821-2
 Pre: AnyZero(C0)
-%a = fsub C0, %x
+%a = fsub nnan C0, %x
 %r = fadd ninf %x, %a
   =>
 %r = 0.0
