@@ -893,6 +893,112 @@ class Icmp(Instr):
 
 
 ################################
+class Fcmp(Instr):
+  OEQ, OGT, OGE, OLT, OLE, ONE, ORD, UEQ, UGT, UGE, ULT, ULE, UNE, UNO, Var, \
+      Last = range(16)
+
+  opnames = {
+    OEQ: 'oeq',
+    OGT: 'ogt',
+    OGE: 'oge',
+    OLT: 'olt',
+    OLE: 'ole',
+    ONE: 'one',
+    ORD: 'ord',
+    UEQ: 'ueq',
+    UGT: 'ugt',
+    UGE: 'uge',
+    ULT: 'ult',
+    ULE: 'ule',
+    UNE: 'une',
+    UNO: 'uno',
+  }
+  opids = {v:k for k, v in opnames.items()}
+
+
+  def __init__(self, op, type, v1, v2):
+    assert isinstance(type, Type)
+    assert isinstance(v1, Value)
+    assert isinstance(v2, Value)
+    self.op = self.getOpId(op)
+    if self.op == self.Var:
+      self.opname = op
+    self.type = IntType(1)
+    self.stype = type.ensureFloatType()
+    self.v1 = v1
+    self.v2 = v2
+
+  def getOpName(self):
+    return 'fcmp'
+
+  @staticmethod
+  def getOpId(name):
+    return Fcmp.opids.get(name, Fcmp.Var)
+
+  def __repr__(self):
+    op = self.opname if self.op == Fcmp.Var else Fcmp.opnames[self.op]
+    if len(op) > 0:
+      op = ' ' + op
+    t = str(self.stype)
+    if len(t) > 0:
+      t = ' ' + t
+    return 'fcmp%s%s %s, %s' % (op, t, self.v1.getName(), self.v2.getName())
+
+  def opToSMT(self, op, a, b):
+    return {
+      self.OEQ: lambda a,b: toBV(fpEQ(a, b)),
+      self.OGT: lambda a,b: toBV(And(a > b, assertNNaN([a, b]))),
+      self.OGE: lambda a,b: toBV(And(a >= b, assertNNaN([a, b]))),
+      self.OLT: lambda a,b: toBV(And(a < b, assertNNaN([a, b]))),
+      self.OLE: lambda a,b: toBV(And(a <= b, assertNNaN([a, b]))),
+      self.ONE: lambda a,b: toBV(And(a != b, assertNNaN([a, b]))),
+      self.ORD: lambda a,b: toBV(assertNNaN([a, b])),
+      self.UEQ: lambda a,b: toBV(Or(fpEQ(a, b), assertAnyNaN([a, b]))),
+      self.UGT: lambda a,b: toBV(Or(a < b, assertAnyNaN([a, b]))),
+      self.UGE: lambda a,b: toBV(Or(a >= b, assertAnyNaN([a, b]))),
+      self.ULT: lambda a,b: toBV(Or(a < b, assertAnyNaN([a, b]))),
+      self.ULE: lambda a,b: toBV(Or(a <= b, assertAnyNaN([a, b]))),
+      self.UNE: lambda a,b: toBV(Or(a != b, assertAnyNaN([a, b]))),
+      self.UNO: lambda a,b: toBV(assertAnyNaN([a, b])),
+    }[op](a, b)
+
+  def recurseSMT(self, ops, a, b, i):
+    if len(ops) == 1:
+      return self.opToSMT(ops[0], a, b)
+    opname = self.opname if self.opname != '' else self.getName()
+    var = BitVec(opname, 4)
+    assert 1 << 4 > self.Var
+    return If(var == i,
+              self.opToSMT(ops[0], a, b),
+              self.recurseSMT(ops[1:], a, b, i+1))
+
+  def toSMT(self, defined, poison, state, qvars):
+    # Generate all possible comparisons if fcmp is generic. Set of comparisons
+    # can be restricted in the precondition.
+    ops = [self.op] if self.op != self.Var else range(self.Var)
+    return self.recurseSMT(ops, state.eval(self.v1, defined, poison, qvars),
+                           state.eval(self.v2, defined, poison, qvars), 0)
+
+  def getTypeConstraints(self):
+    return And(self.stype == self.v1.type,
+               self.stype == self.v2.type,
+               self.type.getTypeConstraints(),
+               self.stype.getTypeConstraints())
+
+  def register_types(self, manager):
+    manager.register_type(self, self.type, IntType(1))
+    manager.register_type(self.v1, self.stype, UnknownType().ensureIntPtrOrVector())
+    manager.unify(self.v1, self.v2)
+
+  PredType = CTypeName('CmpInst::Predicate')
+
+  def visit_source(self, mb):
+    assert False
+
+  def visit_target(self, manager, use_builder=False):
+    assert False
+
+################################
 class Select(Instr):
   def __init__(self, type, c, v1, v2):
     assert isinstance(type, Type)

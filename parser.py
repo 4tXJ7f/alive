@@ -153,6 +153,9 @@ def parseConversionOp(toks):
 def parseIcmp(toks):
   return Icmp(toks[1], toks[2], toks[3], parseOperand(toks[4], toks[2]))
 
+def parseFcmp(toks):
+  return Fcmp(toks[1], toks[2], toks[3], parseOperand(toks[4], toks[2]))
+
 def parseSelect(toks):
   t = getMostSpecificType(toks[3], toks[5])
   return Select(t, toks[2], parseOperand(toks[4], t), parseOperand(toks[6], t))
@@ -360,6 +363,9 @@ optionalname = Optional(identifier).setParseAction(pa(parseOptional('')))
 icmp = (Literal('icmp') + optionalname + typeoperand + comma + operand).\
          setParseAction(pa(parseIcmp))
 
+fcmp = (Literal('fcmp') + optionalname + typeoperand + comma + operand).\
+            setParseAction(pa(parseFcmp))
+
 select = (Literal('select') + booloperand +\
           comma + opttype + operand + comma + opttype + operand).\
             setParseAction(pa(parseSelect))
@@ -379,7 +385,7 @@ load = (Literal('load') + ptroperand + optalign).setParseAction(pa(parseLoad))
 
 operandinstr = (opttype + operand).setParseAction(pa(parseOperandInstr))
 
-op = operandinstr | icmp | select | alloca | gep | load | binop | conversionop
+op = operandinstr | icmp | fcmp | select | alloca | gep | load | binop | conversionop
 
 store = (Literal('store') + typeoperand + comma + ptroperand +\
          optalign).setParseAction(pa(parseStore))

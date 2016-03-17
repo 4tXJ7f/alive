@@ -342,3 +342,13 @@ def save_parse_str(s, line):
 def save_loc(loc):
   global gbl_parse_loc
   gbl_parse_loc = loc
+
+
+##########################
+# Floating-point utils
+
+def assertNNaN(xs):
+  return And([Not(fpIsNaN(x)) for x in xs])
+
+def assertAnyNaN(xs):
+  return Or([fpIsNaN(x) for x in xs])

@@ -187,7 +187,7 @@ def str_model(s, v):
   if isinstance(val, BoolRef):
     return "true" if is_true(val) else "false"
   elif isinstance(val, FPNumRef):
-    bv_val = simplify(fpToIEEEBV(fpToFP(RNE(), val, Float64())))
+    bv_val = s.model().evaluate(fpToIEEEBV(fpToFP(RNE(), val, Float64())))
     hex_str = val2binhex(bv_val.as_long(), bv_val.size())
     return "{} ({})".format(val, hex_str)
   valu = val.as_long()
@@ -241,7 +241,7 @@ def check_refinement(srcv, tgtv, types, extra_cnstrs, users):
     (b, defb, poisonb, qvarsb, _) = tgtv[k]
     defb = mk_and(defb)
     poisonb = mk_and(poisonb)
-        
+
     n_users = users[k]
     base_cnstr = defa + poisona + extra_cnstrs + n_users
 

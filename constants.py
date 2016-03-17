@@ -141,7 +141,10 @@ class CnstUnaryOp(Constant):
     assert isinstance(v, (Constant, Input))
     self.op = op
     self.v = v
-    self.type = IntType()
+    self.type = {
+      self.Not: IntType(),
+      self.Neg: UnknownType(),
+    }[self.op]
     self.mk_name()
 
   def __repr__(self):
