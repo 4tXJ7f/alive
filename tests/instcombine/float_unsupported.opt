@@ -92,13 +92,6 @@ Pre: AnyZero(C01) && AnyZero(C02)
   =>
 %r = select %c, C1, C2
 
-Name: XminusX:InstructionSimplify:820-1
-Pre: AnyZero(C0)
-%a = fsub nnan ninf C0, %x
-%r = fadd nnan %x, %a
-  =>
-%r = 0.0
-
 Name: XminusX:InstructionSimplify:820-2
 Pre: AnyZero(C0)
 %a = fsub C0, %x

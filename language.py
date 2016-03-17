@@ -180,7 +180,7 @@ class State:
   def add_other_vars(self, other_state):
     for v, (smt, defined, poison, qvars, _) in other_state.vars.iteritems():
       if v[0] != '%' and v[0] != 'C' and not v.startswith('ret_'):
-        self.vars[v] = (smt, defined, poison, qvars)
+        self.vars[v] = (smt, defined, poison, qvars, lambda a,b: False)
 
 
 ################################

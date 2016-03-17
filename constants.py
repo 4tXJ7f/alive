@@ -277,7 +277,7 @@ class CnstBinaryOp(Constant):
 ################################
 class CnstFunction(Constant):
   abs, sbits, obits, zbits, ctlz, cttz, log2, lshr, max, sext, trunc, umax,\
-  width, zext, sitofp, fptosi, Last = range(17)
+  width, zext, sitofp, fptosi, fptrunc, fpext, Last = range(19)
 
   opnames = {
     abs:   'abs',
@@ -296,6 +296,8 @@ class CnstFunction(Constant):
     zext:  'zext',
     sitofp: 'sitofp',
     fptosi: 'fptosi',
+    fptrunc: 'fptrunc',
+    fpext: 'fpext',
   }
   opids = {v:k for k,v in opnames.items()}
 
@@ -316,6 +318,8 @@ class CnstFunction(Constant):
     zext:  1,
     sitofp: 1,
     fptosi: 1,
+    fptrunc: 1,
+    fpext: 1,
   }
 
   ret_types = {
@@ -335,6 +339,8 @@ class CnstFunction(Constant):
     zext:  IntType(),
     sitofp: FloatType(),
     fptosi: IntType(),
+    fptrunc: FloatType(),
+    fpext: FloatType(),
   }
 
   def __init__(self, op, args, type):
@@ -383,6 +389,8 @@ class CnstFunction(Constant):
       self.zext:  lambda a: [self.type > a.type],
       self.sitofp: lambda a: allTyEqual([a], Type.Int) + allTyEqual([self], Type.Float),
       self.fptosi: lambda a: allTyEqual([a], Type.Float) + allTyEqual([self], Type.Int),
+      self.fptrunc: lambda a: allTyEqual([a], Type.Float) + [self.type < a.type],
+      self.fpext: lambda a: allTyEqual([a], Type.Float) + [self.type > a.type],
     }[self.op](*self.args)
 
     return mk_and([v.getTypeConstraints() for v in self.args] +\
@@ -416,6 +424,8 @@ class CnstFunction(Constant):
       self.zext:  lambda a: ([], ZeroExt(size - a.size(), a)),
       self.sitofp: lambda a: ([], fpToFP(RNE(), a, FloatType(size).sortOfFloat())),
       self.fptosi: lambda a: ([], fpToSBV(RNE(), a, BitVecSort(size))),
+      self.fptrunc: lambda a: ([], fpToFP(RNE(), a, FloatType(size).sortOfFloat())),
+      self.fpext: lambda a: ([], fpToFP(RNE(), a, FloatType(size).sortOfFloat())),
     }[self.op](*args)
 
     if d is None:

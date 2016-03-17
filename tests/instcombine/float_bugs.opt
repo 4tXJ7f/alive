@@ -1,3 +1,13 @@
+Name: FAddToAdd:AddSub:1374
+Pre: hasOneUse(%a) && hasOneUse(%b) && WillNotOverflowSignedAdd(%x, %y)
+%a = sitofp %x
+%b = sitofp %y
+%r = fadd %a, %b
+  =>
+%c = add nsw %x, %y
+%r = sitofp %c
+
+
 ; NOTE: this bug seems to be fixed in master
 Name: ZeroSubZeroSub:InstructionSimplify:852-2
 %a = fsub -0.0, %x
@@ -14,9 +24,3 @@ Name: UndefDivX:InstructionSimplify:1117
 %r = fdiv undef, %x
   =>
 %r = undef
-
-Name: RemOfSelect:MulDivRem:716
-%a = select %c, 0.0, C
-%r = frem %x, %a
-  =>
-%r = frem %x, C

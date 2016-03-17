@@ -295,7 +295,7 @@ class LLVMBoolPred(BoolPred):
     NUWMul:      ['input', 'input'],
     NUWShl:      ['const', 'const'],
     OneUse:      ['var'],
-    isNormal:    ['input'],
+    isNormal:    ['any'],
     notNegZero:  ['input'],
     anyZero:     ['any'],
     unorderedCmp: ['const'],

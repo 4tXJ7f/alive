@@ -148,6 +148,15 @@ class UnknownType(Type):
       return self.types[self.Int]
     return None
 
+  def getFloatType(self, c):
+    if self.myType == self.Unknown and self.types.has_key(self.Float):
+      self.myType = self.Float
+      c += [self.typevar == self.Float]
+
+    if self.myType == self.Float:
+      return self.types[self.Float]
+    return None
+
   def getPointeeType(self):
     assert self.myType == self.Unknown or self.myType == self.Ptr
     self.myType = self.Ptr

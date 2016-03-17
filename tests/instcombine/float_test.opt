@@ -1,3 +1,12 @@
+; isNormal(x) does not seem necessary
+Name: cmpZero:Compares:3975
+Pre: fpext(%conv) == C && isNormal(%conv)
+%a = fpext %x
+%r = fcmp %a, C
+  =>
+%conv = fptrunc(C)
+%r = fcmp %x, %conv
+
 Name: cmpUndef:InstructionSimplify:3080-1
 Pre: unorderedCmp(C)
 %r = fcmp C %x, undef
@@ -115,16 +124,6 @@ Name: SelectZero:AddSub:1402-1
 %r = fadd %a, %b
   =>
 %r = select %c, C1, C2
-
-
-Name: FAddToAdd:AddSub:1374
-Pre: hasOneUse(%a) && hasOneUse(%b) && WillNotOverflowSignedAdd(%x, %y)
-%a = sitofp %x
-%b = sitofp %y
-%r = fadd %a, %b
-  =>
-%c = add nsw %x, %y
-%r = sitofp %c
 
 
 Name: FAddToAdd:AddSub:1360
