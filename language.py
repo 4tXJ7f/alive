@@ -923,6 +923,11 @@ class Fcmp(Instr):
   def isUnorderedCmp(op):
     return op >= Fcmp.UEQ
 
+  # TODO: Make isUnorderedCmp/isOrderedCmp one function
+  @staticmethod
+  def isOrderedCmp(op):
+    return And(op >= Fcmp.OEQ, op <= Fcmp.ORD)
+
   def __init__(self, op, type, v1, v2):
     assert isinstance(type, Type)
     assert isinstance(v1, Value)

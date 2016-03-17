@@ -5,7 +5,7 @@ Pre: unorderedCmp(C)
 %r = true
 
 Name: cmpUndef:InstructionSimplify:3080-2
-Pre: !unorderedCmp(C)
+Pre: orderedCmp(C)
 %r = fcmp C %x, undef
   =>
 %r = false

@@ -206,8 +206,8 @@ class BinaryBoolPred(BoolPred):
 class LLVMBoolPred(BoolPred):
   eqptrs, isPower2, isPower2OrZ, isShiftedMask, isSignBit, maskZero,\
   NSWAdd, NUWAdd, NSWSub, NUWSub, NSWMul, NUWMul, NUWShl, OneUse, isNormal, \
-  notNegZero, anyZero, unorderedCmp, \
-  Last = range(19)
+  notNegZero, anyZero, unorderedCmp, orderedCmp, \
+  Last = range(20)
 
   opnames = {
     eqptrs:      'equivalentAddressValues',
@@ -229,6 +229,7 @@ class LLVMBoolPred(BoolPred):
     notNegZero:  'CannotBeNegativeZero',
     anyZero:     'AnyZero',
     unorderedCmp: 'unorderedCmp',
+    orderedCmp:  'orderedCmp',
   }
   opids = {v:k for k, v in opnames.items()}
 
@@ -252,6 +253,7 @@ class LLVMBoolPred(BoolPred):
     notNegZero:  1,
     anyZero:     1,
     unorderedCmp: 1,
+    orderedCmp: 1,
   }
 
   def __init__(self, op, args):
@@ -297,6 +299,7 @@ class LLVMBoolPred(BoolPred):
     notNegZero:  ['input'],
     anyZero:     ['any'],
     unorderedCmp: ['const'],
+    orderedCmp:  ['const'],
   }
 
   @staticmethod
@@ -335,6 +338,7 @@ class LLVMBoolPred(BoolPred):
     notNegZero:  lambda a: allTyEqual([a], Type.Float),
     anyZero:     lambda a: allTyEqual([a], Type.Float),
     unorderedCmp: lambda a: allTyEqual([a], Type.Int),
+    orderedCmp:  lambda a: allTyEqual([a], Type.Int),
   }
 
   def getTypeConstraints(self):
@@ -383,6 +387,7 @@ class LLVMBoolPred(BoolPred):
       self.notNegZero:  lambda a: (d, [a != -0.0]),
       self.anyZero:     lambda a: (d, [fpIsZero(a)]),
       self.unorderedCmp: lambda a: (d, [Fcmp.isUnorderedCmp(a)]),
+      self.orderedCmp:  lambda a: (d, [Fcmp.isOrderedCmp(a)]),
     }[self.op](*args)
 
   def register_types(self, manager):
