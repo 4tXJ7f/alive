@@ -154,6 +154,9 @@ def parseIcmp(toks):
   return Icmp(toks[1], toks[2], toks[3], parseOperand(toks[4], toks[2]))
 
 def parseFcmp(toks):
+  if toks[1].startswith('C'):
+    # XXX: Is this ok?
+    parseOperand(toks[1], IntType(Fcmp.TYPE_BITS))
   return Fcmp(toks[1], toks[2], toks[3], parseOperand(toks[4], toks[2]))
 
 def parseSelect(toks):

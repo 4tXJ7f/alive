@@ -1,3 +1,15 @@
+Name: cmpUndef:InstructionSimplify:3080-1
+Pre: unorderedCmp(C)
+%r = fcmp C %x, undef
+  =>
+%r = true
+
+Name: cmpUndef:InstructionSimplify:3080-2
+Pre: !unorderedCmp(C)
+%r = fcmp C %x, undef
+  =>
+%r = false
+
 Name: extCmpExt:Compares:4095
 %a = fpext %x
 %b = fpext %y

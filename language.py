@@ -915,6 +915,13 @@ class Fcmp(Instr):
   }
   opids = {v:k for k, v in opnames.items()}
 
+  # Number of bits needed to represent the type of comparison.
+  # Useful for comparisons with variable predicates.
+  TYPE_BITS = 5
+
+  @staticmethod
+  def isUnorderedCmp(op):
+    return op >= Fcmp.UEQ
 
   def __init__(self, op, type, v1, v2):
     assert isinstance(type, Type)
@@ -966,8 +973,8 @@ class Fcmp(Instr):
     if len(ops) == 1:
       return self.opToSMT(ops[0], a, b)
     opname = self.opname if self.opname != '' else self.getName()
-    var = BitVec(opname, 4)
-    assert 1 << 4 > self.Var
+    var = BitVec(opname, self.TYPE_BITS)
+    assert 1 << self.TYPE_BITS > self.Var
     return If(var == i,
               self.opToSMT(ops[0], a, b),
               self.recurseSMT(ops[1:], a, b, i+1))
@@ -989,8 +996,6 @@ class Fcmp(Instr):
     manager.register_type(self, self.type, IntType(1))
     manager.register_type(self.v1, self.stype, UnknownType().ensureIntPtrOrVector())
     manager.unify(self.v1, self.v2)
-
-  PredType = CTypeName('CmpInst::Predicate')
 
   def visit_source(self, mb):
     assert False
@@ -1420,4 +1425,5 @@ def toSMT(prog, idents, isSource):
 def getRelaxationCond(op, src, tgt):
   return [op.getRelaxationCond(src, tgt)]
 
+# XXX: do we need this?
 def getNinfCond(a, b, expr): pass
