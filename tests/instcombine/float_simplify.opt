@@ -1,0 +1,163 @@
+Name: AddZero:InstructionSimplify:806-1
+Pre: CannotBeNegativeZero(%x)
+%r = fadd %x, 0.0
+  =>
+%r = %x
+
+
+Name: SubZero:InstructionSimplify:845-1
+Pre: CannotBeNegativeZero(%x)
+%r = fsub %x, -0.0
+  =>
+%r = %x
+
+
+Name: MulOne:InstructionSimplify:882
+%r = fmul %x, 1.0
+  =>
+%r = %x
+
+
+Name: AddZero:InstructionSimplify:802
+%r = fadd %x, -0.0
+  =>
+%r = %x
+
+
+Name: SubZero:InstructionSimplify:841
+%r = fsub %x, 0.0
+  =>
+%r = %x
+
+
+Name: ZeroSubZeroSub:InstructionSimplify:852-1
+%a = fsub -0.0, %x
+%r = fsub -0.0, %a
+  =>
+%r = %x
+
+
+Name: cmpUndef:InstructionSimplify:3080-1
+Pre: unorderedCmp(C)
+%r = fcmp C %x, undef
+  =>
+%r = true
+
+
+Name: cmpUndef:InstructionSimplify:3080-2
+Pre: orderedCmp(C)
+%r = fcmp C %x, undef
+  =>
+%r = false
+
+
+Name: AddZero:InstructionSimplify:806-2
+%r = fadd nsz %x, 0.0
+  =>
+%r = %x
+
+
+Name: SubZero:InstructionSimplify:845-2
+%r = fsub nsz %x, -0.0
+  =>
+%r = %x
+
+
+Name: XSubX:InstructionSimplify:859
+%r = fsub nnan %x, %x
+  =>
+%r = 0.0
+
+
+Name: ZeroSubZeroSub:InstructionSimplify:854-1
+%a = fsub 0.0, %x
+%r = fsub nsz 0.0, %a
+  =>
+%r = %x
+
+
+Name: ZeroSubZeroSub:InstructionSimplify:854-2
+%a = fsub 0.0, %x
+%r = fsub nsz -0.0, %a
+  =>
+%r = %x
+
+
+Name: MulZero:InstructionSimplify:886-1
+%r = fmul nnan nsz %x, 0.0
+  =>
+%r = 0.0
+
+
+Name: MulZero:InstructionSimplify:886-2
+%r = fmul nnan nsz %x, -0.0
+  =>
+%r = -0.0
+
+
+Name: ZeroDiv:InstructionSimplify:1127
+Pre: AnyZero(C)
+%r = fdiv nnan nsz %x, C
+  =>
+%r = 0.0
+
+
+Name: XDivX:InstructionSimplify:1132
+%r = fdiv nnan %x, %x
+  =>
+%r = 1.0
+
+
+Name: NegXDivX:InstructionSimplify:1138
+Pre: AnyZero(C)
+%a = fsub C, %x
+%r = fdiv nnan %a, %x
+  =>
+%r = -1.0
+
+
+Name: NegXDivX:InstructionSimplify:1140
+Pre: AnyZero(C)
+%a = fsub C, %x
+%r = fdiv nnan %x, %a
+  =>
+%r = -1.0
+
+
+Name: XminusX:InstructionSimplify:820-2
+Pre: AnyZero(C0)
+%a = fsub C0, %x
+%r = fadd ninf nnan %x, %a
+  =>
+%r = 0.0
+
+Name: XPlusMinusX:InstructionSimplify:821-1
+Pre: AnyZero(C0)
+%a = fsub ninf C0, %x
+%r = fadd nnan %x, %a
+  =>
+%r = 0.0
+
+Name: XPlusMinusX:InstructionSimplify:821-2
+Pre: AnyZero(C0)
+%a = fsub nnan C0, %x
+%r = fadd ninf %x, %a
+  =>
+%r = 0.0
+
+Name: UndefFRemX:InstructionSimplify:1257
+%r = frem undef, %x
+  =>
+%r = undef
+
+Name: UndefFRemX:InstructionSimplify:1261
+%r = frem %x, undef
+  =>
+%r = undef
+
+Name: 0FRemX:InstructionSimplify:1267
+Pre: AnyZero(C0)
+%r = frem nnan nsz C0, %x
+  =>
+%r = C0
+
