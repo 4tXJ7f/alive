@@ -144,8 +144,9 @@ def check_expr(qvars, expr, error):
   correct_exprs[id] = expr
 
   s = tactic.solver()
+  s.set('timeout', 300 * 1000)
   s.add(expr)
-  
+
   if __debug__:
     gen_benchmark(s)
 
@@ -529,11 +530,12 @@ def main():
 
     opts = parse_opt_file(f.read())
 
-    for opt in opts:
+    for i, opt in enumerate(opts):
       if not args.match or any(pat in opt[0] for pat in args.match):
         if args.output:
           gen.append(opt)
         if args.verify:
+          print 'Optimization {}'.format(i + 1)
           check_opt(opt)
         elif not args.output:
           print opt[0]
