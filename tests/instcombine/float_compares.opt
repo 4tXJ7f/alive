@@ -1,3 +1,37 @@
+Name: xUNOx:Compares:3938
+; C = UNO, ULT, UGT, UNE
+Pre: C == 14 || C == 11 || C == 9 || C == 13
+%r = fcmp C %x, %x
+  =>
+%r = fcmp uno %x, 0.0
+
+
+Name: xORDx:Compares:3947
+; C = ORD, OEQ, OGE, OLE
+Pre: C == 7 || C == 1 || C == 3 || C == 5
+%r = fcmp C %x, %x
+  =>
+%r = fcmp ord %x, 0.0
+
+
+; isNormal(x) does not seem necessary
+Name: cmpZero:Compares:3975
+Pre: (fpext(%conv) == C && isNormal(%conv))
+%a = fpext %x
+%r = fcmp %a, C
+  =>
+%conv = fptrunc(C)
+%r = fcmp %x, %conv
+
+
+Name: cmpNeg:Compares:4031
+Pre: swap(C1, C2)
+%a = fsub -0.0, %x
+%r = fcmp C1 %a, C
+  =>
+%r = fcmp C2 %x, -C
+
+
 Name: AbsOLT0:Compares:4065
 %a = fabs %x
 %r = fcmp olt %a, 0.0
@@ -34,22 +68,14 @@ Pre: C == 1 || C == 6 || C == 8 || C == 13
   =>
 %r = fcmp C %x, 0.0
 
-Name: cmpNeg:Compares:4031
+
+Name: fcmpNEg:Compares:4091
 Pre: swap(C1, C2)
 %a = fsub -0.0, %x
-%r = fcmp C1 %a, C
+%b = fsub -0.0, %y
+%r = fcmp C1 %a, %b
   =>
-%r = fcmp C2 %x, -C
-
-
-; isNormal(x) does not seem necessary
-Name: cmpZero:Compares:3975
-Pre: (fpext(%conv) == C && isNormal(%conv))
-%a = fpext %x
-%r = fcmp %a, C
-  =>
-%conv = fptrunc(C)
-%r = fcmp %x, %conv
+%r = fcmp C2 %x, %y
 
 
 Name: extCmpExt:Compares:4095
@@ -58,66 +84,3 @@ Name: extCmpExt:Compares:4095
 %r = fcmp %a, %b
   =>
 %r = fcmp %x, %y
-
-
-; XXX: Do more
-Name: negxOEQC:Compares:4031
-%a = fsub -0.0, %x
-%r = fcmp oeq %a, C
-  =>
-%r = fcmp oeq %x, -C
-
-
-Name: xUNOx:Compares:3938
-%r = fcmp uno %x, %x
-  =>
-%r = fcmp uno %x, 0.0
-
-
-Name: xULTx:Compares:3939
-%r = fcmp ult %x, %x
-  =>
-%r = fcmp uno %x, 0.0
-
-
-Name: xUGTx:Compares:3940
-%r = fcmp ugt %x, %x
-  =>
-%r = fcmp uno %x, 0.0
-
-
-Name: xUNEx:Compares:3941
-%r = fcmp une %x, %x
-  =>
-%r = fcmp uno %x, 0.0
-
-
-Name: xORDx:Compares:3947
-%r = fcmp ord %x, %x
-  =>
-%r = fcmp ord %x, 0.0
-
-
-Name: xORDx:Compares:3948
-%r = fcmp oeq %x, %x
-  =>
-%r = fcmp ord %x, 0.0
-
-
-Name: xORDx:Compares:3949
-%r = fcmp oge %x, %x
-  =>
-%r = fcmp ord %x, 0.0
-
-
-Name: xORDx:Compares:3950
-%r = fcmp ole %x, %x
-  =>
-%r = fcmp ord %x, 0.0
-
-
-Name: addToSubRev
-%a = fsub -0.0, %X
-%r = fadd %a, %Y
-  =>
-%r = fsub %Y, %X
