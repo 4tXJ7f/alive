@@ -1,3 +1,9 @@
+Name: MulNegOne:MulDivRem:555
+%r = fmul %X, -1.0
+  =>
+%r = fsub -0.0, %X
+
+
 ; Ignore symmetric case
 Name: NegMulNeg:MulDivRem:654-1
 %a = fsub -0.0, %x
@@ -8,22 +14,6 @@ Name: NegMulNeg:MulDivRem:654-1
 
 
 ; Ignore symmetric case
-Name: NegMulNeg:MulDivRem:660-1
-Pre: hasOneUse(%a)
-%a = fsub -0.0, %x
-%r = fmul %a, %y
-  =>
-%b = fmul %x, %y
-%r = fsub -0.0, %b
-
-
-Name: MulNegOne:MulDivRem:555
-%r = fmul %X, -1.0
-  =>
-%r = fsub -0.0, %X
-
-
-; Ignore symmetric case
 Name: NegMulNeg:MulDivRem:654-2
 Pre: AnyZero(C0) && AnyZero(C1)
 %a = fsub C0, %x
@@ -31,6 +21,16 @@ Pre: AnyZero(C0) && AnyZero(C1)
 %r = fmul nsz %a, %b
   =>
 %r = fmul nsz %x, %y
+
+
+; Ignore symmetric case
+Name: NegMulNeg:MulDivRem:660-1
+Pre: hasOneUse(%a)
+%a = fsub -0.0, %x
+%r = fmul %a, %y
+  =>
+%b = fmul %x, %y
+%r = fsub -0.0, %b
 
 
 ; Ignore symmetric case
