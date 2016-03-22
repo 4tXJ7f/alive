@@ -160,4 +160,3 @@ Pre: AnyZero(C0)
 %r = frem nnan nsz C0, %x
   =>
 %r = C0
-
