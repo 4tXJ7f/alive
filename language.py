@@ -894,10 +894,11 @@ class Icmp(Instr):
 
 ################################
 class Fcmp(Instr):
-  OEQ, OGT, OGE, OLT, OLE, ONE, ORD, UEQ, UGT, UGE, ULT, ULE, UNE, UNO, Var, \
-      Last = range(16)
+  FALSE, OEQ, OGT, OGE, OLT, OLE, ONE, ORD, UEQ, UGT, UGE, ULT, ULE, UNE, UNO, TRUE, Var, \
+      Last = range(18)
 
   opnames = {
+    FALSE: 'false',
     OEQ: 'oeq',
     OGT: 'ogt',
     OGE: 'oge',
@@ -912,6 +913,7 @@ class Fcmp(Instr):
     ULE: 'ule',
     UNE: 'une',
     UNO: 'uno',
+    TRUE: 'true',
   }
   opids = {v:k for k, v in opnames.items()}
 
@@ -927,6 +929,28 @@ class Fcmp(Instr):
   @staticmethod
   def isOrderedCmp(op):
     return And(op >= Fcmp.OEQ, op <= Fcmp.ORD)
+
+  @staticmethod
+  def swapCmp(op1, op2):
+    return And([Implies(Or([
+          op1 == Fcmp.FALSE,
+          op1 == Fcmp.TRUE,
+          op1 == Fcmp.OEQ,
+          op1 == Fcmp.ONE,
+          op1 == Fcmp.UEQ,
+          op1 == Fcmp.UNE,
+          op1 == Fcmp.ORD,
+          op1 == Fcmp.UNO]), op1 == op2),
+      Implies(op1 == Fcmp.OGT, op2 == Fcmp.OLT),
+      Implies(op1 == Fcmp.OLT, op2 == Fcmp.OGT),
+      Implies(op1 == Fcmp.OGE, op2 == Fcmp.OLE),
+      Implies(op1 == Fcmp.OLE, op2 == Fcmp.OGE),
+      Implies(op1 == Fcmp.UGT, op2 == Fcmp.ULT),
+      Implies(op1 == Fcmp.ULT, op2 == Fcmp.UGT),
+      Implies(op1 == Fcmp.UGE, op2 == Fcmp.ULE),
+      Implies(op1 == Fcmp.ULE, op2 == Fcmp.UGE),
+      op1 >= Fcmp.FALSE, op2 >= Fcmp.FALSE,
+      op1 <= Fcmp.TRUE, op2 <= Fcmp.TRUE])
 
   def __init__(self, op, type, v1, v2):
     assert isinstance(type, Type)
@@ -958,6 +982,7 @@ class Fcmp(Instr):
 
   def opToSMT(self, op, a, b):
     return {
+      self.FALSE: lambda a,b: toBV(False),
       self.OEQ: lambda a,b: toBV(fpEQ(a, b)),
       self.OGT: lambda a,b: toBV(And(a > b, assertNNaN([a, b]))),
       self.OGE: lambda a,b: toBV(And(a >= b, assertNNaN([a, b]))),
@@ -966,12 +991,13 @@ class Fcmp(Instr):
       self.ONE: lambda a,b: toBV(And(a != b, assertNNaN([a, b]))),
       self.ORD: lambda a,b: toBV(assertNNaN([a, b])),
       self.UEQ: lambda a,b: toBV(Or(fpEQ(a, b), assertAnyNaN([a, b]))),
-      self.UGT: lambda a,b: toBV(Or(a < b, assertAnyNaN([a, b]))),
+      self.UGT: lambda a,b: toBV(Or(a > b, assertAnyNaN([a, b]))),
       self.UGE: lambda a,b: toBV(Or(a >= b, assertAnyNaN([a, b]))),
       self.ULT: lambda a,b: toBV(Or(a < b, assertAnyNaN([a, b]))),
       self.ULE: lambda a,b: toBV(Or(a <= b, assertAnyNaN([a, b]))),
       self.UNE: lambda a,b: toBV(Or(a != b, assertAnyNaN([a, b]))),
       self.UNO: lambda a,b: toBV(assertAnyNaN([a, b])),
+      self.TRUE: lambda a,b: toBV(True),
     }[op](a, b)
 
   def recurseSMT(self, ops, a, b, i):

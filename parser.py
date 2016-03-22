@@ -53,7 +53,7 @@ def parseOptType(toks):
     return toks[0]
   return UnknownType()
 
-def parseOperand(v, type):
+def parseOperand(v, type, can_declare_vars=False):
   global identifiers, used_identifiers
 
   if isinstance(v, (ParseResults, list)):
@@ -70,7 +70,7 @@ def parseOperand(v, type):
     if identifiers.has_key(v):
       used_identifiers.add(v)
       return identifiers[v]
-    if parsing_phase == Target:
+    if parsing_phase == Target and (not can_declare_vars):
       raise ParseError('Cannot declare new input variables or constants in '
                        'Target')
     if parsing_phase == Pre:
@@ -156,7 +156,7 @@ def parseIcmp(toks):
 def parseFcmp(toks):
   if toks[1].startswith('C'):
     # XXX: Is this ok?
-    parseOperand(toks[1], IntType(Fcmp.TYPE_BITS))
+    parseOperand(toks[1], IntType(Fcmp.TYPE_BITS), can_declare_vars=True)
   return Fcmp(toks[1], toks[2], toks[3], parseOperand(toks[4], toks[2]))
 
 def parseSelect(toks):

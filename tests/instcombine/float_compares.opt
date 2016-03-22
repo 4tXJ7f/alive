@@ -1,6 +1,14 @@
+Name: cmpNeg:Compares:4031
+Pre: swap(C1, C2)
+%a = fsub -0.0, %x
+%r = fcmp C1 %a, C
+  =>
+%r = fcmp C2 %x, -C
+
+
 ; isNormal(x) does not seem necessary
 Name: cmpZero:Compares:3975
-Pre: fpext(%conv) == C && isNormal(%conv)
+Pre: (fpext(%conv) == C && isNormal(%conv))
 %a = fpext %x
 %r = fcmp %a, C
   =>
