@@ -132,7 +132,8 @@ tactic = AndThen(
   #Tactic('simplify'),
   #Tactic('propagate-values'),
   Tactic('solve-eqs'),
-  Cond(Probe('is-qfbv'), Tactic('qfbv'), Tactic('bv'))
+  # Cond(Probe('is-qfbv'), Tactic('qfbv'), Tactic('bv'))
+  Tactic('qffpbv')
 )
 
 correct_exprs = {}
