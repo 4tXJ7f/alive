@@ -634,6 +634,21 @@ class ConversionOp(Instr):
 
   def toSMT(self, defined, poison, state, qvars):
     size = self.type.getSize()
+
+    def make_to_int(fp_v, min_v, max_v, conv_f, size, qvars):
+      min_v = fpToFP(RNE(), min_v, fp_v.sort())
+      max_v = fpToFPUnsigned(RNE(), max_v, fp_v.sort())
+      undef = freshBV('to_int', size)
+      qvars += [undef]
+      return If(Or(fpIsNaN(fp_v), fpIsInf(fp_v), fp_v > max_v, fp_v < min_v), undef, conv_f(RNE(), fp_v, BitVecSort(size)))
+
+    def make_to_float(bv_v, conv_f, size, qvars):
+      sort = FloatType(size).sortOfFloat()
+      fp_v = conv_f(RNE(), bv_v, sort)
+      undef = freshFP('to_float', sort)
+      qvars += [undef]
+      return If(fpIsInf(fp_v), undef, fp_v)
+
     return {
       self.Trunc:       lambda v: Extract(size-1, 0, v),
       self.ZExt:        lambda v: ZeroExt(size -
@@ -646,10 +661,10 @@ class ConversionOp(Instr):
       self.Bitcast:     lambda v: v,
       self.FPTrunc:     lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
       self.FPExt:       lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
-      self.FPToUI:      lambda v: fpToUBV(RNE(), v, BitVecSort(size)),
-      self.FPToSI:      lambda v: fpToSBV(RNE(), v, BitVecSort(size)),
-      self.UIToFP:      lambda v: fpToFPUnsigned(RNE(), v, FloatType(size).sortOfFloat()),
-      self.SIToFP:      lambda v: fpToFP(RNE(), v, FloatType(size).sortOfFloat()),
+      self.FPToUI:      lambda v: make_to_int(v, unsigned_min_val(size), unsigned_max_val(size), fpToUBV, size, qvars),
+      self.FPToSI:      lambda v: make_to_int(v, signed_min_val(size), signed_max_val(size), fpToSBV, size, qvars),
+      self.UIToFP:      lambda v: make_to_float(v, fpToFPUnsigned, size, qvars),
+      self.SIToFP:      lambda v: make_to_float(v, fpToFP, size, qvars),
     }[self.op](state.eval(self.v, defined, poison, qvars))
 
   def getTypeConstraints(self):

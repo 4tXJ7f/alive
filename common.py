@@ -34,6 +34,8 @@ def fold_ite_list(l):
 def freshBV(prefix, size):
   return BitVec('%s_%s' % (prefix, mk_unique_id()), size)
 
+def freshFP(prefix, sort):
+  return FP('%s_%s' % (prefix, mk_unique_id()), sort)
 
 def mk_and(l):
   l = [e for e in l if not is_true(e)]
@@ -352,3 +354,18 @@ def assertNNaN(xs):
 
 def assertAnyNaN(xs):
   return Or([fpIsNaN(x) for x in xs])
+
+##########################
+# BitVec utils
+
+def unsigned_min_val(size):
+  return BitVecVal(0, BitVecSort(size))
+
+def unsigned_max_val(size):
+  return BitVecVal(-1, BitVecSort(size))
+
+def signed_min_val(size):
+  return BitVecVal(-2 ** (size - 1), BitVecSort(size))
+
+def signed_max_val(size):
+  return BitVecVal(2 ** (size - 1) - 1, BitVecSort(size))
