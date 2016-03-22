@@ -1,3 +1,39 @@
+Name: AbsOLT0:Compares:4065
+%a = fabs %x
+%r = fcmp olt %a, 0.0
+  =>
+%r = false
+
+
+Name: AbsOGT0:Compares:4068
+%a = fabs %x
+%r = fcmp ogt %a, 0.0
+  =>
+%r = fcmp one %x, 0.0
+
+
+Name: AbsOLE0:Compares:4071
+%a = fabs %x
+%r = fcmp ole %a, 0.0
+  =>
+%r = fcmp oeq %x, 0.0
+
+
+Name: AbsOGE0:Compares:4074
+%a = fabs %x
+%r = fcmp oge %a, 0.0
+  =>
+%r = fcmp ord %x, 0.0
+
+
+Name: AbsOGE0:Compares:4078
+; C = OEQ, UEQ, ONE, UNE
+Pre: C == 1 || C == 6 || C == 8 || C == 13
+%a = fabs %x
+%r = fcmp C %a, 0.0
+  =>
+%r = fcmp C %x, 0.0
+
 Name: cmpNeg:Compares:4031
 Pre: swap(C1, C2)
 %a = fsub -0.0, %x

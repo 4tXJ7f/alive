@@ -538,7 +538,8 @@ class BinOp(Instr):
 
 ################################
 class ConversionOp(Instr):
-  Trunc, ZExt, SExt, ZExtOrTrunc, Ptr2Int, Int2Ptr, Bitcast, FPTrunc, FPExt, FPToUI, FPToSI, UIToFP, SIToFP, Last = range(14)
+  # TODO: fabs is not really a conversion op
+  Trunc, ZExt, SExt, ZExtOrTrunc, Ptr2Int, Int2Ptr, Bitcast, FPTrunc, FPExt, FPToUI, FPToSI, UIToFP, SIToFP, FAbs, Last = range(15)
 
   opnames = {
     Trunc:       'trunc',
@@ -554,6 +555,7 @@ class ConversionOp(Instr):
     FPToSI:      'fptosi',
     UIToFP:      'uitofp',
     SIToFP:      'sitofp',
+    FAbs:        'fabs',
   }
   opids = {v:k for k, v in opnames.items()}
 
@@ -598,7 +600,8 @@ class ConversionOp(Instr):
         ConversionOp.FPTrunc,
         ConversionOp.FPExt,
         ConversionOp.FPToSI,
-        ConversionOp.FPToUI ]
+        ConversionOp.FPToUI,
+        ConversionOp.FAbs ]
 
   @staticmethod
   def enforceIntTgt(op):
@@ -621,7 +624,8 @@ class ConversionOp(Instr):
         ConversionOp.FPTrunc,
         ConversionOp.FPExt,
         ConversionOp.SIToFP,
-        ConversionOp.UIToFP ]
+        ConversionOp.UIToFP,
+        ConversionOp.FAbs ]
 
   def __repr__(self):
     st = str(self.stype)
@@ -665,6 +669,7 @@ class ConversionOp(Instr):
       self.FPToSI:      lambda v: make_to_int(v, signed_min_val(size), signed_max_val(size), fpToSBV, size, qvars),
       self.UIToFP:      lambda v: make_to_float(v, fpToFPUnsigned, size, qvars),
       self.SIToFP:      lambda v: make_to_float(v, fpToFP, size, qvars),
+      self.FAbs:        lambda v: fpAbs(v),
     }[self.op](state.eval(self.v, defined, poison, qvars))
 
   def getTypeConstraints(self):
@@ -682,6 +687,7 @@ class ConversionOp(Instr):
       self.FPToSI:      lambda src,tgt: BoolVal(True),
       self.UIToFP:      lambda src,tgt: BoolVal(True),
       self.SIToFP:      lambda src,tgt: BoolVal(True),
+      self.FAbs:        lambda src,tgt: src.getSize() == tgt.getSize(),
     } [self.op](self.stype, self.type)
 
     return And(self.stype == self.v.type,
@@ -1003,14 +1009,14 @@ class Fcmp(Instr):
       self.OGE: lambda a,b: toBV(And(a >= b, assertNNaN([a, b]))),
       self.OLT: lambda a,b: toBV(And(a < b, assertNNaN([a, b]))),
       self.OLE: lambda a,b: toBV(And(a <= b, assertNNaN([a, b]))),
-      self.ONE: lambda a,b: toBV(And(a != b, assertNNaN([a, b]))),
+      self.ONE: lambda a,b: toBV(And(fpNEQ(a, b), assertNNaN([a, b]))),
       self.ORD: lambda a,b: toBV(assertNNaN([a, b])),
       self.UEQ: lambda a,b: toBV(Or(fpEQ(a, b), assertAnyNaN([a, b]))),
       self.UGT: lambda a,b: toBV(Or(a > b, assertAnyNaN([a, b]))),
       self.UGE: lambda a,b: toBV(Or(a >= b, assertAnyNaN([a, b]))),
       self.ULT: lambda a,b: toBV(Or(a < b, assertAnyNaN([a, b]))),
       self.ULE: lambda a,b: toBV(Or(a <= b, assertAnyNaN([a, b]))),
-      self.UNE: lambda a,b: toBV(Or(a != b, assertAnyNaN([a, b]))),
+      self.UNE: lambda a,b: toBV(Or(fpNEQ(a, b), assertAnyNaN([a, b]))),
       self.UNO: lambda a,b: toBV(assertAnyNaN([a, b])),
       self.TRUE: lambda a,b: toBV(True),
     }[op](a, b)
