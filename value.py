@@ -119,6 +119,7 @@ class UnknownType(Type):
 
   def ensureIntPtrOrVector(self):
     # only ints, ptrs, or vectors of ints/ptrs
+    del self.types[self.Float]
     del self.types[self.Array]
     return self
 

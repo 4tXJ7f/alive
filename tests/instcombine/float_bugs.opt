@@ -1,13 +1,3 @@
-Name: FAddToAdd:AddSub:1374
-Pre: hasOneUse(%a) && hasOneUse(%b) && WillNotOverflowSignedAdd(%x, %y)
-%a = sitofp %x
-%b = sitofp %y
-%r = fadd %a, %b
-  =>
-%c = add nsw %x, %y
-%r = sitofp %c
-
-
 ; NOTE: this bug seems to be fixed in master
 Name: ZeroSubZeroSub:InstructionSimplify:852-2
 %a = fsub -0.0, %x

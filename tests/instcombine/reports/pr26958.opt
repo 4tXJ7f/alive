@@ -1,3 +1,4 @@
+; ERROR: Mismatch in values
 Name: XminusX:InstructionSimplify:820-1
 Pre: AnyZero(C0)
 %a = fsub nnan ninf C0, %x

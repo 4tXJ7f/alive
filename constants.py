@@ -214,7 +214,8 @@ class CnstBinaryOp(Constant):
     assert False
 
   def getTypeConstraints(self):
-    return mk_and([self.v1.type == self.v2.type,
+    return mk_and([self.type == self.v1.type,
+                   self.type == self.v2.type,
                    self.v1.getTypeConstraints(),
                    self.v2.getTypeConstraints(),
                    self.type.getTypeConstraints()])

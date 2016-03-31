@@ -1,0 +1,9 @@
+; ERROR: Mismatch in values
+Name: FAddToAdd:AddSub:1374
+Pre: hasOneUse(%a) && hasOneUse(%b) && WillNotOverflowSignedAdd(%x, %y)
+%a = sitofp %x
+%b = sitofp %y
+%r = fadd %a, %b
+  =>
+%c = add nsw %x, %y
+%r = sitofp %c
