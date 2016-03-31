@@ -1,3 +1,4 @@
+; ERROR: Mismatch in values
 Name: SubNegToPlus:AddSub:1749
 %a = fsub 0.0, %y
 %b = fptrunc %a

@@ -1,3 +1,4 @@
+; ERROR: Mismatch in values
 Name: ZeroToNegZero:AddSub:1730
 %r = fsub 0.0, %x
   =>

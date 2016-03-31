@@ -113,7 +113,7 @@ class UndefVal(Constant):
       # XXX: create_mem_if_needed?
       # create_mem_if_needed(v, self, state, [v])
       return v
-    elif isinstance(t, IntType):
+    elif isinstance(t, (IntType, PtrType)):
       v = BitVec('undef' + self.id, t.getSize())
       qvars += [v]
       create_mem_if_needed(v, self, state, [v])
