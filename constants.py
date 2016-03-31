@@ -102,7 +102,7 @@ class UndefVal(Constant):
     if isinstance(t, UnknownType):
       if t.myType == Type.Float:
         t = FloatType(t.getSize())
-      elif t.myType == Type.Int:
+      elif t.myType == Type.Int or t.myType == Type.Ptr:
         t = IntType(t.getSize())
       else:
         assert False
