@@ -126,18 +126,6 @@ Pre: AnyZero(C)
 %r = -1.0
 
 
-Name: UndefFRemX:InstructionSimplify:1257
-%r = frem undef, %x
-  =>
-%r = undef
-
-
-Name: UndefFRemX:InstructionSimplify:1261
-%r = frem %x, undef
-  =>
-%r = undef
-
-
 Name: 0FRemX:InstructionSimplify:1267
 Pre: AnyZero(C0)
 %r = frem nnan nsz C0, %x

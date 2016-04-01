@@ -1,0 +1,5 @@
+; ERROR: Mismatch in values
+Name: UndefFRemX:InstructionSimplify:1261
+%r = frem %x, undef
+  =>
+%r = undef
