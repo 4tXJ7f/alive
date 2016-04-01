@@ -132,7 +132,8 @@ tactic = AndThen(
   #Tactic('simplify'),
   #Tactic('propagate-values'),
   Tactic('solve-eqs'),
-  OrElse(Tactic('qffpbv'), Cond(Probe('is-qfbv'), Tactic('qfbv'), Tactic('bv')))
+  # OrElse(Tactic('qffpbv'), Cond(Probe('is-qfbv'), Tactic('qfbv'), Tactic('bv')))
+  Cond(Probe('is-qffp'), Tactic('qffp'), Cond(Probe('is-qfbv'), Tactic('qfbv'), Tactic('bv')))
 )
 
 correct_exprs = {}
@@ -354,7 +355,7 @@ def check_typed_opt(pre, src, ident_src, tgt, ident_tgt, types, users):
   tgtv = toSMT(tgt, ident_tgt, False)
   # XXX: this is rather hack-y
   srcv.add_other_vars(tgtv)
-  
+
   pre_d, pre = pre.toSMT(srcv)
 
   extra_cnstrs = pre_d + pre +\

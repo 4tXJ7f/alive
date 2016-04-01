@@ -553,7 +553,7 @@ def _parseOpt(s, loc, toks):
   save_parse_str(tgt, tgt_line)
   tgt, ident_tgt, used_tgt, skip_tgt = parse_llvm(tgt)
 
-  ident_all = ident_tgt
+  ident_all = ident_src
   for k, v in ident_tgt.iteritems():
     if k not in ident_src:
       ident_all[k] = v

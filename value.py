@@ -419,7 +419,7 @@ class FloatType(Type):
     else:
       # Floats are assumed to be 16, 32 or 64 bit.
       # c += [Or(self.bitsvar == 32)]
-      c += [Or(self.bitsvar == 16, self.bitsvar == 32, self.bitsvar == 64)]
+      c += [Or(self.bitsvar == 64, self.bitsvar == 32, self.bitsvar == 16)]
     return And(c)
 
   def sortOfFloat(self):
