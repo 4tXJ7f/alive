@@ -1,0 +1,5 @@
+; ERROR: Mismatch in values
+Name: UndefDivX:InstructionSimplify:1117
+%r = fdiv undef, %x
+  =>
+%r = undef

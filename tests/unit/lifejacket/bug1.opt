@@ -1,0 +1,7 @@
+; ERROR: Mismatch in values
+; NOTE: this bug seems to be fixed in master
+Name: ZeroSubZeroSub:InstructionSimplify:852-2
+%a = fsub -0.0, %x
+%r = fsub 0.0, %a
+  =>
+%r = %x

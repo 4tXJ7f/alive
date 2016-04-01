@@ -1,0 +1,8 @@
+Name: FAddToAdd:AddSub:1360
+Pre: hasOneUse(%a) && WillNotOverflowSignedAdd(%x, fptosi(C)) && (sitofp(%conv) == C)
+%a = sitofp %x
+%r = fadd %a, C
+  =>
+%conv = fptosi(C)
+%b = add nsw %x, %conv
+%r = sitofp %b

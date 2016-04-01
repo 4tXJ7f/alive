@@ -1,0 +1,8 @@
+; Ignore symmetric case
+Name: NegMulNeg:MulDivRem:654-2
+Pre: AnyZero(C0) && AnyZero(C1)
+%a = fsub C0, %x
+%b = fsub C1, %y
+%r = fmul nsz %a, %b
+  =>
+%r = fmul nsz %x, %y

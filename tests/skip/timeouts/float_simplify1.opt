@@ -1,0 +1,6 @@
+Name: NegXDivX:InstructionSimplify:1138
+Pre: AnyZero(C)
+%a = fsub C, %x
+%r = fdiv nnan %a, %x
+  =>
+%r = -1.0

@@ -1,13 +1,3 @@
-Name: FAddToAdd:AddSub:1360
-Pre: hasOneUse(%a) && WillNotOverflowSignedAdd(%x, fptosi(C)) && (sitofp(%conv) == C)
-%a = sitofp %x
-%r = fadd %a, C
-  =>
-%conv = fptosi(C)
-%b = add nsw %x, %conv
-%r = sitofp %b
-
-
 Name: SelectZero:AddSub:1399-1
 %a = select %c, -0.0, C1
 %b = select %c, C2, -0.0
@@ -53,15 +43,6 @@ Name: SubNegToPlus:AddSub:1744
 %r = fsub %x, %a
   =>
 %r = fadd %x, %y
-
-
-Name: SubNegToPlus:AddSub:1749
-%a = fsub -0.0, %y
-%b = fptrunc %a
-%r = fsub %x, %b
-  =>
-%c = fptrunc %y
-%r = fadd %x, %c
 
 
 Name: SubNegToPlus:AddSub:1756

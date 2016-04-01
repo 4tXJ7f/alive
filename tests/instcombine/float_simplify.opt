@@ -104,6 +104,7 @@ Name: MulZero:InstructionSimplify:886-2
   =>
 %r = -0.0
 
+
 Name: ZeroDiv:InstructionSimplify:1127
 Pre: AnyZero(C)
 %r = fdiv nnan nsz %x, C
@@ -115,14 +116,6 @@ Name: XDivX:InstructionSimplify:1132
 %r = fdiv nnan %x, %x
   =>
 %r = 1.0
-
-
-Name: NegXDivX:InstructionSimplify:1138
-Pre: AnyZero(C)
-%a = fsub C, %x
-%r = fdiv nnan %a, %x
-  =>
-%r = -1.0
 
 
 Name: NegXDivX:InstructionSimplify:1140
@@ -138,10 +131,12 @@ Name: UndefFRemX:InstructionSimplify:1257
   =>
 %r = undef
 
+
 Name: UndefFRemX:InstructionSimplify:1261
 %r = frem %x, undef
   =>
 %r = undef
+
 
 Name: 0FRemX:InstructionSimplify:1267
 Pre: AnyZero(C0)
